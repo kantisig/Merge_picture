@@ -18,7 +18,7 @@
             font-family: 'Prompt', sans-serif;
             background-color: #f8fafc;
         }
-        /* Custom scrollbar for preview section */
+        /* Custom scrollbar */
         ::-webkit-scrollbar {
             width: 8px;
             height: 8px;
@@ -35,7 +35,7 @@
         }
         .drag-over {
             border-color: #6366f1 !important;
-            background-color: #ee authorization-50 !important;
+            background-color: #e0e7ff !important;
         }
     </style>
 </head>
@@ -56,7 +56,7 @@
             
             <button id="downloadBtn" class="bg-indigo-600 hover:bg-indigo-700 text-white font-medium px-5 py-2.5 rounded-xl shadow-sm hover:shadow-md transition duration-200 flex items-center space-x-2 text-sm disabled:opacity-50 disabled:cursor-not-allowed">
                 <i class="fa-solid fa-download"></i>
-                <span>ดาวน์โหลดรูปภาพ</span>
+                <span>บันทึกรูปภาพ</span>
             </button>
         </div>
     </header>
@@ -67,7 +67,7 @@
         <!-- Sidebar Controls & Upload (Left Side - 4 Cols) -->
         <div class="lg:col-span-5 xl:col-span-4 space-y-6">
             
-            <!-- Step 1: Mode Select & Upload Area -->
+            <!-- Step 1: Upload Area -->
             <div class="bg-white rounded-2xl p-5 border border-slate-200 shadow-sm space-y-4">
                 <div class="flex items-center justify-between">
                     <h2 class="font-semibold text-slate-800 flex items-center gap-2">
@@ -185,11 +185,11 @@
                     <div class="grid grid-cols-2 gap-2">
                         <label class="flex items-center gap-2 p-2 rounded-xl border border-slate-200 bg-slate-50 cursor-pointer hover:bg-white text-xs">
                             <input type="radio" name="exportFormat" value="png" checked class="accent-indigo-600">
-                            <span class="font-medium text-slate-700">PNG (ความคมชัดสูง)</span>
+                            <span class="font-medium text-slate-700">PNG (คมชัดสูง)</span>
                         </label>
                         <label class="flex items-center gap-2 p-2 rounded-xl border border-slate-200 bg-slate-50 cursor-pointer hover:bg-white text-xs">
                             <input type="radio" name="exportFormat" value="jpeg" class="accent-indigo-600">
-                            <span class="font-medium text-slate-700">JPG (ขนาดไฟล์เล็ก)</span>
+                            <span class="font-medium text-slate-700">JPG (ไฟล์เล็ก)</span>
                         </label>
                     </div>
                 </div>
@@ -216,7 +216,7 @@
                             <i class="fa-regular fa-images text-3xl"></i>
                         </div>
                         <h3 class="font-semibold text-slate-700 text-base mb-1">ยังไม่มีรูปภาพ</h3>
-                        <p class="text-xs text-slate-500 leading-relaxed mb-4">อัปโหลดภาพจำนวน 5 ถึง 20 ภาพที่แถบด้านข้าง เพื่อเริ่มต้นสร้างกริดรูปภาพสวยๆ ได้ทันที</p>
+                        <p class="text-xs text-slate-500 leading-relaxed mb-4">อัปโหลดภาพจำนวน 5 ถึง 20 ภาพที่แถบด้านข้าง หรือใช้รูปตัวอย่างเพื่อทดลองใช้</p>
                         <button id="emptyUploadBtn" class="bg-indigo-50 hover:bg-indigo-100 text-indigo-600 border border-indigo-200 text-xs font-semibold px-4 py-2 rounded-xl transition">
                             เลือกรูปภาพตัวอย่าง
                         </button>
@@ -236,6 +236,40 @@
 
     </main>
 
+    <!-- Save Preview / Fallback Modal (Optimized for Mobile / iOS) -->
+    <div id="exportModal" class="fixed inset-0 bg-slate-900/70 backdrop-blur-sm z-50 flex items-center justify-center p-4 opacity-0 pointer-events-none transition-opacity duration-300">
+        <div class="bg-white rounded-2xl max-w-2xl w-full max-h-[90vh] flex flex-col shadow-2xl overflow-hidden transform scale-95 transition-transform duration-300">
+            <div class="p-4 border-b border-slate-100 flex items-center justify-between bg-slate-50">
+                <div class="flex items-center gap-2 text-slate-800 font-semibold text-sm sm:text-base">
+                    <i class="fa-solid fa-circle-check text-emerald-500"></i>
+                    <span>ประมวลผลรูปภาพเรียบร้อย</span>
+                </div>
+                <button id="closeModalBtn" class="w-8 h-8 rounded-full bg-slate-200 hover:bg-slate-300 text-slate-600 flex items-center justify-center text-xs transition">
+                    <i class="fa-solid fa-xmark"></i>
+                </button>
+            </div>
+            
+            <div class="p-4 overflow-y-auto flex-1 flex flex-col items-center justify-center bg-slate-900/5">
+                <p class="text-xs text-slate-500 mb-3 text-center">
+                    <span class="sm:hidden font-medium text-indigo-600"><i class="fa-solid fa-hand-pointer"></i> แตะค้างที่รูปด้านล่าง แล้วเลือก "บันทึกไปยังแอปรูปภาพ" (Save to Photos)</span>
+                    <span class="hidden sm:inline">หากระบบไม่ดาวน์โหลดอัตโนมัติ คุณสามารถคลิกขวาเพื่อคัดลอกหรือบันทึกรูปภาพได้</span>
+                </p>
+                <div class="max-w-full max-h-[60vh] rounded-xl overflow-hidden shadow-lg bg-white border border-slate-200 flex justify-center items-center">
+                    <img id="exportResultImg" class="max-w-full max-h-[60vh] object-contain block" alt="Collage Export Result">
+                </div>
+            </div>
+
+            <div class="p-4 border-t border-slate-100 flex flex-wrap gap-2 justify-end bg-slate-50">
+                <button id="openNewTabBtn" class="px-4 py-2 bg-slate-200 hover:bg-slate-300 text-slate-700 text-xs font-semibold rounded-xl transition flex items-center gap-1.5">
+                    <i class="fa-solid fa-arrow-up-right-from-square"></i> เปิดในแท็บใหม่
+                </button>
+                <button id="directDownloadBtn" class="px-5 py-2 bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-semibold rounded-xl shadow-sm transition flex items-center gap-1.5">
+                    <i class="fa-solid fa-download"></i> ดาวน์โหลดไฟล์อีกครั้ง
+                </button>
+            </div>
+        </div>
+    </div>
+
     <!-- Notification / Toast Container -->
     <div id="toast" class="fixed bottom-5 right-5 bg-slate-800 text-white text-xs font-medium px-4 py-3 rounded-xl shadow-xl transition-all duration-300 opacity-0 transform translate-y-4 pointer-events-none z-50 flex items-center gap-2">
         <i id="toastIcon" class="fa-solid fa-circle-check text-emerald-400 text-sm"></i>
@@ -253,11 +287,10 @@
             borderRadius: 8,
             bgColor: '#ffffff',
             aspectRatio: 1, // 1:1 square default, 'auto' or numeric
-            format: 'png',
-            maxCanvasWidth: 2000 // Pixel width for generated export canvas
+            format: 'png'
         };
 
-        <!-- DOM Elements -->
+        // DOM Elements
         const dropZone = document.getElementById('dropZone');
         const fileInput = document.getElementById('fileInput');
         const thumbnailContainer = document.getElementById('thumbnailContainer');
@@ -271,7 +304,14 @@
         const exportCanvas = document.getElementById('exportCanvas');
         const canvasDimensionText = document.getElementById('canvasDimensionText');
 
-        <!-- Controls Elements -->
+        // Modal Elements
+        const exportModal = document.getElementById('exportModal');
+        const exportResultImg = document.getElementById('exportResultImg');
+        const closeModalBtn = document.getElementById('closeModalBtn');
+        const openNewTabBtn = document.getElementById('openNewTabBtn');
+        const directDownloadBtn = document.getElementById('directDownloadBtn');
+
+        // Controls Elements
         const gapInput = document.getElementById('gapInput');
         const gapValueText = document.getElementById('gapValueText');
         const paddingInput = document.getElementById('paddingInput');
@@ -281,7 +321,9 @@
         const bgColorInput = document.getElementById('bgColorInput');
         const colValueText = document.getElementById('colValueText');
 
-        // Toast Notification Function
+        let currentBlobUrl = null;
+
+        // Toast Notification
         function showToast(message, type = 'success') {
             const toast = document.getElementById('toast');
             const toastMessage = document.getElementById('toastMessage');
@@ -296,16 +338,16 @@
                 toastIcon.className = 'fa-solid fa-circle-xmark text-rose-400 text-sm';
             }
 
-            toast.classList.remove('opacity-0', 'translate-y-4');
+            toast.classList.remove('opacity-0', 'translate-y-4', 'pointer-events-none');
             toast.classList.add('opacity-100', 'translate-y-0');
 
             setTimeout(() => {
                 toast.classList.remove('opacity-100', 'translate-y-0');
-                toast.classList.add('opacity-0', 'translate-y-4');
-            }, 3000);
+                toast.classList.add('opacity-0', 'translate-y-4', 'pointer-events-none');
+            }, 3500);
         }
 
-        // Initialize Event Listeners
+        // Initialize Events
         function initEvents() {
             // Dropzone drag & drop
             ['dragenter', 'dragover'].forEach(eventName => {
@@ -403,7 +445,25 @@
 
             clearAllBtn.addEventListener('click', clearAllImages);
             shuffleBtn.addEventListener('click', shuffleImages);
-            downloadBtn.addEventListener('click', downloadCombinedImage);
+            downloadBtn.addEventListener('click', processAndSaveImage);
+
+            // Modal Handlers
+            closeModalBtn.addEventListener('click', hideModal);
+            exportModal.addEventListener('click', (e) => {
+                if(e.target === exportModal) hideModal();
+            });
+
+            openNewTabBtn.addEventListener('click', () => {
+                if (currentBlobUrl) {
+                    window.open(currentBlobUrl, '_blank');
+                }
+            });
+
+            directDownloadBtn.addEventListener('click', () => {
+                if (currentBlobUrl) {
+                    triggerDownload(currentBlobUrl);
+                }
+            });
         }
 
         // Handle uploaded image files
@@ -419,6 +479,7 @@
                 const reader = new FileReader();
                 reader.onload = (e) => {
                     const img = new Image();
+                    img.crossOrigin = "anonymous"; // Safe for Canvas
                     img.onload = () => {
                         state.images.push({
                             id: Date.now() + Math.random(),
@@ -439,7 +500,7 @@
             fileInput.value = '';
         }
 
-        // Generate Sample Images when clicking sample button
+        // Generate Sample Images locally via canvas (Pure DataURL - No CORS issue)
         function generateSampleImages() {
             const sampleColors = ['#f43f5e', '#3b82f6', '#10b981', '#f59e0b', '#8b5cf6', '#ec4899', '#06b6d4', '#84cc16'];
             let loaded = 0;
@@ -447,26 +508,27 @@
 
             for (let i = 0; i < targetCount; i++) {
                 const canvas = document.createElement('canvas');
-                canvas.width = 400;
-                canvas.height = 400;
+                canvas.width = 500;
+                canvas.height = 500;
                 const ctx = canvas.getContext('2d');
 
                 // Draw background gradient
-                const grad = ctx.createLinearGradient(0, 0, 400, 400);
+                const grad = ctx.createLinearGradient(0, 0, 500, 500);
                 grad.addColorStop(0, sampleColors[i % sampleColors.length]);
                 grad.addColorStop(1, sampleColors[(i + 2) % sampleColors.length]);
                 ctx.fillStyle = grad;
-                ctx.fillRect(0, 0, 400, 400);
+                ctx.fillRect(0, 0, 500, 500);
 
                 // Draw simple text icon
                 ctx.fillStyle = '#ffffff';
                 ctx.font = 'bold 80px Prompt, sans-serif';
                 ctx.textAlign = 'center';
                 ctx.textBaseline = 'middle';
-                ctx.fillText(`ภาพที่ ${i + 1}`, 200, 200);
+                ctx.fillText(`ภาพที่ ${i + 1}`, 250, 250);
 
-                const dataUrl = canvas.toDataURL();
+                const dataUrl = canvas.toDataURL('image/png');
                 const img = new Image();
+                img.crossOrigin = "anonymous";
                 img.onload = () => {
                     state.images.push({
                         id: Date.now() + Math.random(),
@@ -525,7 +587,7 @@
                 thumbnailContainer.appendChild(thumb);
             });
 
-            // Delete single thumbnail event listener
+            // Delete single thumbnail
             document.querySelectorAll('.delete-thumb-btn').forEach(btn => {
                 btn.addEventListener('click', (e) => {
                     e.stopPropagation();
@@ -588,16 +650,15 @@
                 collagePreview.appendChild(card);
             });
 
-            // Update real export canvas sizes
+            // Sync Export Canvas
             calculateCanvasSize();
         }
 
-        // Calculate and sync Hi-Res Canvas for Download
+        // Calculate Canvas Dimensions
         function calculateCanvasSize() {
             const colCount = state.columns;
             const rowCount = Math.ceil(state.images.length / colCount);
             
-            // Base unit sizes in pixels for export
             const itemWidth = 500;
             let itemHeight = 500;
 
@@ -614,13 +675,8 @@
             canvasDimensionText.textContent = `${Math.round(totalWidth)} x ${Math.round(totalHeight)} px`;
         }
 
-        // Draw Canvas and Trigger File Download
-        function downloadCombinedImage() {
-            if (state.images.length === 0) {
-                showToast('กรุณาเพิ่มรูปภาพก่อนดาวน์โหลด', 'warning');
-                return;
-            }
-
+        // Draw Images to Export Canvas
+        function drawCanvas() {
             const ctx = exportCanvas.getContext('2d');
             const colCount = state.columns;
             const rowCount = Math.ceil(state.images.length / colCount);
@@ -648,7 +704,7 @@
 
                 ctx.save();
 
-                // Apply Border Radius Clipping Path
+                // Border Radius Clipping Path
                 if (state.borderRadius > 0) {
                     const r = Math.min(state.borderRadius * 2, itemWidth / 2, itemHeight / 2);
                     ctx.beginPath();
@@ -661,12 +717,12 @@
                     ctx.clip();
                 }
 
-                // Draw Image with Object-Fit Cover Logic
+                // Object-Fit Cover Calculation
                 const img = item.imgObj;
                 const imgAspect = img.width / img.height;
                 const targetAspect = itemWidth / itemHeight;
 
-                let drawW, drawH, sx, sy, sWidth, sHeight;
+                let sx, sy, sWidth, sHeight;
 
                 if (imgAspect > targetAspect) {
                     sHeight = img.height;
@@ -683,20 +739,88 @@
                 ctx.drawImage(img, sx, sy, sWidth, sHeight, x, y, itemWidth, itemHeight);
                 ctx.restore();
             });
+        }
 
-            // Create download link
-            const mimeType = state.format === 'jpeg' ? 'image/jpeg' : 'image/png';
-            const fileExt = state.format === 'jpeg' ? 'jpg' : 'png';
-            const dataUrl = exportCanvas.toDataURL(mimeType, 0.92);
+        // Process and Save Image (Cross-Platform & Mobile Friendly)
+        function processAndSaveImage() {
+            if (state.images.length === 0) {
+                showToast('กรุณาเพิ่มรูปภาพก่อนบันทึก', 'warning');
+                return;
+            }
 
-            const link = document.createElement('a');
-            link.download = `photo-collage-${Date.now()}.${fileExt}`;
-            link.href = dataUrl;
-            document.body.appendChild(link);
-            link.click();
-            document.body.removeChild(link);
+            try {
+                // Redraw on canvas first
+                drawCanvas();
 
-            showToast('ดาวน์โหลดรูปภาพรวมสำเร็จ!');
+                const mimeType = state.format === 'jpeg' ? 'image/jpeg' : 'image/png';
+                const fileExt = state.format === 'jpeg' ? 'jpg' : 'png';
+                const fileName = `photo-collage-${Date.now()}.${fileExt}`;
+
+                // Convert Canvas to Blob for smooth downloading without memory caps
+                exportCanvas.toBlob((blob) => {
+                    if (!blob) {
+                        showToast('เกิดข้อผิดพลาดในการประมวลผลไฟล์', 'error');
+                        return;
+                    }
+
+                    // Revoke old object URL if exists
+                    if (currentBlobUrl) {
+                        URL.revokeObjectURL(currentBlobUrl);
+                    }
+
+                    currentBlobUrl = URL.createObjectURL(blob);
+
+                    // Detect Mobile / iOS
+                    const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
+
+                    if (isMobile) {
+                        // On Mobile/iOS: Show Modal so users can long-press and "Save to Photos"
+                        exportResultImg.src = currentBlobUrl;
+                        showModal();
+                        showToast('สร้างรูปภาพสำเร็จ! กดค้างที่รูปภาพเพื่อบันทึก');
+                    } else {
+                        // On Desktop: Trigger direct download link
+                        triggerDownload(currentBlobUrl, fileName);
+                        
+                        // Also set src for fallback modal if desktop browser blocks popup
+                        exportResultImg.src = currentBlobUrl;
+                        showToast('ดาวน์โหลดรูปภาพสำเร็จ!');
+                    }
+
+                }, mimeType, 0.95);
+
+            } catch (err) {
+                console.error("Save Image Error: ", err);
+                showToast('ไม่สามารถบันทึกได้เนื่องจากปัญหาการดาวน์โหลดภาพข้ามโดเมน', 'error');
+            }
+        }
+
+        // Trigger direct anchor tag download
+        function triggerDownload(url, fileName = `photo-collage-${Date.now()}.${state.format === 'jpeg' ? 'jpg' : 'png'}`) {
+            const a = document.createElement('a');
+            a.style.display = 'none';
+            a.href = url;
+            a.download = fileName;
+            document.body.appendChild(a);
+            a.click();
+            setTimeout(() => {
+                document.body.removeChild(a);
+            }, 200);
+        }
+
+        // Modal Controls
+        function showModal() {
+            exportModal.classList.remove('opacity-0', 'pointer-events-none');
+            exportModal.classList.add('opacity-100');
+            exportModal.firstElementChild.classList.remove('scale-95');
+            exportModal.firstElementChild.classList.add('scale-100');
+        }
+
+        function hideModal() {
+            exportModal.classList.remove('opacity-100');
+            exportModal.classList.add('opacity-0', 'pointer-events-none');
+            exportModal.firstElementChild.classList.remove('scale-100');
+            exportModal.firstElementChild.classList.add('scale-95');
         }
 
         // On Page Load
