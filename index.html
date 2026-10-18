@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Photo Collage & Image Merger - รวมรูปภาพง่ายๆ</title>
+    <title>Studio Photo Grid & Collage Editor - รวมและแต่งรูปภาพโปร</title>
     <!-- Tailwind CSS CDN -->
     <script src="https://cdn.tailwindcss.com"></script>
     <!-- FontAwesome Icons -->
@@ -16,219 +16,382 @@
     <style>
         body {
             font-family: 'Prompt', sans-serif;
-            background-color: #f8fafc;
+            background-color: #0f172a;
+            color: #f8fafc;
+        }
+        /* Custom Glassmorphism Styles */
+        .glass-panel {
+            background: rgba(30, 41, 59, 0.7);
+            backdrop-filter: blur(16px);
+            -webkit-backdrop-filter: blur(16px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+        .glass-card {
+            background: rgba(255, 255, 255, 0.05);
+            backdrop-filter: blur(8px);
+            border: 1px solid rgba(255, 255, 255, 0.08);
         }
         /* Custom scrollbar */
         ::-webkit-scrollbar {
-            width: 8px;
-            height: 8px;
+            width: 6px;
+            height: 6px;
         }
         ::-webkit-scrollbar-track {
-            background: #f1f5f9;
+            background: rgba(15, 23, 42, 0.6);
         }
         ::-webkit-scrollbar-thumb {
-            background: #cbd5e1;
-            border-radius: 4px;
+            background: rgba(99, 102, 241, 0.4);
+            border-radius: 3px;
         }
         ::-webkit-scrollbar-thumb:hover {
-            background: #94a3b8;
+            background: rgba(99, 102, 241, 0.8);
         }
-        .drag-over {
-            border-color: #6366f1 !important;
-            background-color: #e0e7ff !important;
+        /* Drag & Drop Visual Indication */
+        .dragging {
+            opacity: 0.4;
+            transform: scale(0.95);
+        }
+        .drag-over-item {
+            border: 2px dashed #6366f1 !important;
+            background-color: rgba(99, 102, 241, 0.15) !important;
+        }
+        /* Grid Layout Styles */
+        .preset-polaroid {
+            padding: 12px 12px 36px 12px !important;
+            background: #ffffff !important;
+            box-shadow: 0 10px 15px -3px rgba(0,0,0,0.3);
+            color: #1e293b;
+        }
+        .preset-filmstrip {
+            border-left: 12px solid #000;
+            border-right: 12px solid #000;
+            position: relative;
         }
     </style>
 </head>
-<body class="text-slate-800 min-h-screen flex flex-col">
+<body class="min-h-screen flex flex-col bg-slate-950 text-slate-100 overflow-x-hidden">
 
     <!-- Header / Navbar -->
-    <header class="bg-white border-b border-slate-200 sticky top-0 z-30 shadow-sm">
+    <header class="glass-panel sticky top-0 z-40 border-b border-slate-800/80">
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
             <div class="flex items-center space-x-3">
-                <div class="bg-indigo-600 text-white p-2.5 rounded-xl shadow-md shadow-indigo-200 flex items-center justify-center">
-                    <i class="fa-solid fa-shapes text-xl"></i>
+                <div class="bg-gradient-to-tr from-indigo-600 to-violet-500 text-white p-2.5 rounded-xl shadow-lg shadow-indigo-500/30 flex items-center justify-center">
+                    <i class="fa-solid fa-wand-magic-sparkles text-xl"></i>
                 </div>
                 <div>
-                    <h1 class="font-bold text-lg text-slate-800 leading-tight">Photo Grid Builder</h1>
-                    <p class="text-xs text-slate-500">รวมรูปภาพ 5 - 20 ภาพเป็นภาพเดียวง่ายๆ</p>
+                    <h1 class="font-bold text-lg text-white leading-tight flex items-center gap-2">
+                        Photo Grid Studio Pro
+                        <span class="text-[10px] font-semibold bg-indigo-500/20 text-indigo-400 border border-indigo-500/30 px-2 py-0.5 rounded-full">Pro v2.5</span>
+                    </h1>
+                    <p class="text-xs text-slate-400">จัดเลย์เอาต์ ปรับตำแหน่งอิสระ ใส่ฟิลเตอร์ & สติ๊กเกอร์</p>
                 </div>
             </div>
             
-            <button id="downloadBtn" class="bg-indigo-600 hover:bg-indigo-700 text-white font-medium px-5 py-2.5 rounded-xl shadow-sm hover:shadow-md transition duration-200 flex items-center space-x-2 text-sm disabled:opacity-50 disabled:cursor-not-allowed">
-                <i class="fa-solid fa-download"></i>
-                <span>บันทึกรูปภาพ</span>
-            </button>
+            <div class="flex items-center gap-3">
+                <button id="resetCanvasBtn" class="px-3.5 py-2 rounded-xl text-xs font-medium bg-slate-800 hover:bg-slate-700 text-slate-300 transition border border-slate-700 flex items-center gap-1.5">
+                    <i class="fa-solid fa-rotate-left"></i>
+                    <span class="hidden sm:inline">รีเซ็ต</span>
+                </button>
+                <button id="downloadBtn" class="bg-gradient-to-r from-indigo-500 to-violet-600 hover:from-indigo-600 hover:to-violet-700 text-white font-medium px-5 py-2.5 rounded-xl shadow-lg shadow-indigo-500/25 transition duration-200 flex items-center space-x-2 text-sm disabled:opacity-50 disabled:cursor-not-allowed">
+                    <i class="fa-solid fa-download"></i>
+                    <span>ส่งออกรูปภาพ</span>
+                </button>
+            </div>
         </div>
     </header>
 
-    <!-- Main Container -->
-    <main class="flex-1 max-w-7xl w-full mx-auto p-4 sm:p-6 lg:p-8 grid grid-cols-1 lg:grid-cols-12 gap-8">
+    <!-- Main Studio Layout -->
+    <main class="flex-1 max-w-7xl w-full mx-auto p-3 sm:p-5 grid grid-cols-1 lg:grid-cols-12 gap-6">
         
-        <!-- Sidebar Controls & Upload (Left Side - 4 Cols) -->
-        <div class="lg:col-span-5 xl:col-span-4 space-y-6">
+        <!-- Sidebar Controls (Left Side - 4 Cols) -->
+        <div class="lg:col-span-5 xl:col-span-4 space-y-4">
             
-            <!-- Step 1: Upload Area -->
-            <div class="bg-white rounded-2xl p-5 border border-slate-200 shadow-sm space-y-4">
+            <!-- Tab Navigation -->
+            <div class="glass-panel p-1.5 rounded-2xl flex text-xs font-medium border border-slate-800">
+                <button data-tab="tab-upload" class="tab-btn flex-1 py-2 rounded-xl text-center transition bg-indigo-600 text-white font-semibold shadow-md">
+                    <i class="fa-solid fa-images mr-1"></i> รูปภาพ (<span id="imageCounterText">0</span>)
+                </button>
+                <button data-tab="tab-layout" class="tab-btn flex-1 py-2 rounded-xl text-center text-slate-400 hover:text-white transition">
+                    <i class="fa-solid fa-border-all mr-1"></i> เลย์เอาต์
+                </button>
+                <button data-tab="tab-filters" class="tab-btn flex-1 py-2 rounded-xl text-center text-slate-400 hover:text-white transition">
+                    <i class="fa-solid fa-sliders mr-1"></i> ปรับแต่ง
+                </button>
+                <button data-tab="tab-decor" class="tab-btn flex-1 py-2 rounded-xl text-center text-slate-400 hover:text-white transition">
+                    <i class="fa-solid fa-icons mr-1"></i> ตกแต่ง
+                </button>
+            </div>
+
+            <!-- Tab 1: Image Upload & Order -->
+            <div id="tab-upload" class="tab-content glass-panel rounded-2xl p-4 space-y-4">
                 <div class="flex items-center justify-between">
-                    <h2 class="font-semibold text-slate-800 flex items-center gap-2">
-                        <span class="w-6 h-6 rounded-full bg-indigo-100 text-indigo-600 text-xs flex items-center justify-center font-bold">1</span>
-                        จัดการรูปภาพ
+                    <h2 class="text-sm font-semibold text-white flex items-center gap-2">
+                        <i class="fa-solid fa-cloud-arrow-up text-indigo-400"></i> อัปโหลด & จัดเรียงภาพ
                     </h2>
-                    <span id="imageCounter" class="text-xs px-2.5 py-1 bg-slate-100 text-slate-600 rounded-full font-medium">0 / 20 ภาพ</span>
+                    <span class="text-[11px] text-slate-400">(แนะนำ 5 - 20 ภาพ)</span>
                 </div>
 
                 <!-- Dropzone Area -->
-                <div id="dropZone" class="border-2 border-dashed border-slate-300 hover:border-indigo-400 rounded-xl p-6 text-center transition duration-200 cursor-pointer bg-slate-50 hover:bg-indigo-50/30 flex flex-col items-center justify-center min-h-[160px]">
+                <div id="dropZone" class="border-2 border-dashed border-slate-700 hover:border-indigo-500 rounded-2xl p-5 text-center transition duration-200 cursor-pointer bg-slate-900/40 hover:bg-indigo-950/20 flex flex-col items-center justify-center">
                     <input type="file" id="fileInput" multiple accept="image/*" class="hidden">
-                    <div class="w-12 h-12 rounded-full bg-indigo-50 text-indigo-600 flex items-center justify-center mb-3">
-                        <i class="fa-solid fa-cloud-arrow-up text-xl"></i>
+                    <div class="w-10 h-10 rounded-xl bg-indigo-500/10 text-indigo-400 border border-indigo-500/20 flex items-center justify-center mb-2">
+                        <i class="fa-solid fa-plus text-lg"></i>
                     </div>
-                    <p class="text-sm font-medium text-slate-700 mb-1">ลากไฟล์มาวางที่นี่ หรือ <span class="text-indigo-600 underline">คลิกเพื่อเลือกภาพ</span></p>
-                    <p class="text-xs text-slate-400">รองรับ JPG, PNG, WEBP (แนะนำ 5 - 20 ภาพ)</p>
+                    <p class="text-xs font-medium text-slate-200 mb-0.5">ลากไฟล์วางที่นี่ หรือ <span class="text-indigo-400 underline">คลิกเลือกภาพ</span></p>
+                    <p class="text-[10px] text-slate-400">รองรับ JPG, PNG, WEBP</p>
                 </div>
 
-                <!-- Action buttons for Uploaded Images -->
+                <!-- Control Buttons for Uploads -->
                 <div class="flex gap-2">
-                    <button id="clearAllBtn" class="flex-1 py-2 px-3 border border-slate-200 hover:bg-rose-50 hover:text-rose-600 hover:border-rose-200 rounded-lg text-xs font-medium text-slate-600 transition flex items-center justify-center gap-1.5 disabled:opacity-50" disabled>
+                    <button id="clearAllBtn" class="flex-1 py-2 px-3 glass-card hover:bg-rose-500/20 hover:border-rose-500/30 text-rose-400 rounded-xl text-xs font-medium transition flex items-center justify-center gap-1.5 disabled:opacity-40" disabled>
                         <i class="fa-regular fa-trash-can"></i> ลบทั้งหมด
                     </button>
-                    <button id="shuffleBtn" class="flex-1 py-2 px-3 border border-slate-200 hover:bg-slate-100 rounded-lg text-xs font-medium text-slate-600 transition flex items-center justify-center gap-1.5 disabled:opacity-50" disabled>
+                    <button id="shuffleBtn" class="flex-1 py-2 px-3 glass-card hover:bg-indigo-500/20 hover:border-indigo-500/30 text-indigo-300 rounded-xl text-xs font-medium transition flex items-center justify-center gap-1.5 disabled:opacity-40" disabled>
                         <i class="fa-solid fa-shuffle"></i> สลับตำแหน่ง
+                    </button>
+                    <button id="addSampleBtn" class="py-2 px-3 glass-card hover:bg-violet-500/20 hover:border-violet-500/30 text-violet-300 rounded-xl text-xs font-medium transition flex items-center justify-center gap-1.5">
+                        <i class="fa-solid fa-vial"></i> ภาพตัวอย่าง
                     </button>
                 </div>
 
-                <!-- Thumbnail List / Reorder -->
-                <div id="thumbnailContainer" class="grid grid-cols-4 gap-2 pt-2 max-h-48 overflow-y-auto">
-                    <!-- Thumbnails appended via JS -->
+                <!-- Interactive Drag & Drop Reorder List -->
+                <div class="space-y-1.5">
+                    <div class="flex items-center justify-between text-[11px] text-slate-400">
+                        <span><i class="fa-solid fa-up-down-left-right text-indigo-400 mr-1"></i> ลากสลับตำแหน่งรูปภาพได้เลย</span>
+                    </div>
+                    <div id="reorderList" class="grid grid-cols-4 gap-2 max-h-56 overflow-y-auto p-1 bg-slate-950/40 rounded-xl border border-slate-800">
+                        <!-- Thumbnail items appended via JS -->
+                    </div>
                 </div>
             </div>
 
-            <!-- Step 2: Customization Controls -->
-            <div class="bg-white rounded-2xl p-5 border border-slate-200 shadow-sm space-y-5">
-                <h2 class="font-semibold text-slate-800 flex items-center gap-2">
-                    <span class="w-6 h-6 rounded-full bg-indigo-100 text-indigo-600 text-xs flex items-center justify-center font-bold">2</span>
-                    ปรับแต่งเลย์เอาต์ & สไตล์
+            <!-- Tab 2: Layout & Preset Templates -->
+            <div id="tab-layout" class="tab-content glass-panel rounded-2xl p-4 space-y-4 hidden">
+                <h2 class="text-sm font-semibold text-white flex items-center gap-2">
+                    <i class="fa-solid fa-table-cells text-indigo-400"></i> เลือกสไตล์ & รูปแบบการจัดวาง
                 </h2>
 
-                <!-- Layout / Columns -->
+                <!-- Preset Templates -->
                 <div class="space-y-2">
-                    <label class="text-xs font-medium text-slate-600 flex justify-between">
-                        <span>จํานวนคอลัมน์ (Grid Columns)</span>
-                        <span id="colValueText" class="text-indigo-600 font-semibold">3 คอลัมน์</span>
-                    </label>
-                    <div class="grid grid-cols-5 gap-1.5 bg-slate-100 p-1 rounded-xl" id="columnSelector">
-                        <button data-cols="1" class="col-btn py-1.5 text-xs font-semibold rounded-lg transition hover:bg-white text-slate-600">1</button>
-                        <button data-cols="2" class="col-btn py-1.5 text-xs font-semibold rounded-lg transition hover:bg-white text-slate-600">2</button>
-                        <button data-cols="3" class="col-btn py-1.5 text-xs font-semibold rounded-lg transition bg-white text-indigo-600 shadow-sm">3</button>
-                        <button data-cols="4" class="col-btn py-1.5 text-xs font-semibold rounded-lg transition hover:bg-white text-slate-600">4</button>
-                        <button data-cols="5" class="col-btn py-1.5 text-xs font-semibold rounded-lg transition hover:bg-white text-slate-600">5</button>
+                    <label class="text-xs font-medium text-slate-300 block">แม่แบบเลย์เอาต์ (Preset Templates)</label>
+                    <div class="grid grid-cols-2 gap-2" id="templateSelector">
+                        <button data-template="grid" class="template-btn p-2.5 rounded-xl border border-indigo-500/50 bg-indigo-500/10 text-indigo-300 text-xs font-medium flex items-center gap-2">
+                            <i class="fa-solid fa-border-all text-base"></i> Classic Grid
+                        </button>
+                        <button data-template="story" class="template-btn p-2.5 rounded-xl border border-slate-800 glass-card hover:border-slate-700 text-slate-300 text-xs font-medium flex items-center gap-2">
+                            <i class="fa-mobile-screen-button text-base"></i> Story (9:16)
+                        </button>
+                        <button data-template="polaroid" class="template-btn p-2.5 rounded-xl border border-slate-800 glass-card hover:border-slate-700 text-slate-300 text-xs font-medium flex items-center gap-2">
+                            <i class="fa-regular fa-image text-base"></i> Polaroid Style
+                        </button>
+                        <button data-template="filmstrip" class="template-btn p-2.5 rounded-xl border border-slate-800 glass-card hover:border-slate-700 text-slate-300 text-xs font-medium flex items-center gap-2">
+                            <i class="fa-solid fa-film text-base"></i> Filmstrip
+                        </button>
                     </div>
                 </div>
 
-                <!-- Aspect Ratio for Crop -->
+                <!-- Grid Column Control -->
                 <div class="space-y-2">
-                    <label class="text-xs font-medium text-slate-600">สัดส่วนของแต่ละช่อง (Aspect Ratio)</label>
-                    <div class="grid grid-cols-4 gap-1.5 bg-slate-100 p-1 rounded-xl" id="aspectSelector">
-                        <button data-aspect="1" class="aspect-btn py-1.5 text-xs font-medium rounded-lg transition bg-white text-indigo-600 shadow-sm">1:1 (สี่เหลี่ยม)</button>
-                        <button data-aspect="0.75" class="aspect-btn py-1.5 text-xs font-medium rounded-lg transition hover:bg-white text-slate-600">3:4 (แนวตั้ง)</button>
-                        <button data-aspect="1.333" class="aspect-btn py-1.5 text-xs font-medium rounded-lg transition hover:bg-white text-slate-600">4:3 (แนวนอน)</button>
-                        <button data-aspect="auto" class="aspect-btn py-1.5 text-xs font-medium rounded-lg transition hover:bg-white text-slate-600">เดิมๆ</button>
+                    <div class="flex justify-between text-xs font-medium text-slate-300">
+                        <span>จำนวนคอลัมน์ (Columns)</span>
+                        <span id="colValueText" class="text-indigo-400 font-bold">3 คอลัมน์</span>
+                    </div>
+                    <div class="grid grid-cols-5 gap-1.5 bg-slate-900/60 p-1 rounded-xl border border-slate-800" id="columnSelector">
+                        <button data-cols="1" class="col-btn py-1.5 text-xs font-semibold rounded-lg transition text-slate-400 hover:text-white">1</button>
+                        <button data-cols="2" class="col-btn py-1.5 text-xs font-semibold rounded-lg transition text-slate-400 hover:text-white">2</button>
+                        <button data-cols="3" class="col-btn py-1.5 text-xs font-semibold rounded-lg transition bg-indigo-600 text-white shadow-sm">3</button>
+                        <button data-cols="4" class="col-btn py-1.5 text-xs font-semibold rounded-lg transition text-slate-400 hover:text-white">4</button>
+                        <button data-cols="5" class="col-btn py-1.5 text-xs font-semibold rounded-lg transition text-slate-400 hover:text-white">5</button>
                     </div>
                 </div>
 
-                <!-- Gap / Spacing Slider -->
+                <!-- Frame Aspect Ratio -->
                 <div class="space-y-2">
-                    <div class="flex justify-between text-xs font-medium text-slate-600">
-                        <span>ระยะห่างระหว่างภาพ (Gap)</span>
-                        <span id="gapValueText" class="text-slate-500">12 px</span>
+                    <label class="text-xs font-medium text-slate-300 block">สัดส่วนช่องภาพ (Aspect Ratio)</label>
+                    <div class="grid grid-cols-4 gap-1.5 bg-slate-900/60 p-1 rounded-xl border border-slate-800" id="aspectSelector">
+                        <button data-aspect="1" class="aspect-btn py-1.5 text-xs font-medium rounded-lg bg-indigo-600 text-white shadow-sm">1:1</button>
+                        <button data-aspect="0.75" class="aspect-btn py-1.5 text-xs font-medium rounded-lg text-slate-400 hover:text-white">3:4</button>
+                        <button data-aspect="1.333" class="aspect-btn py-1.5 text-xs font-medium rounded-lg text-slate-400 hover:text-white">4:3</button>
+                        <button data-aspect="1.777" class="aspect-btn py-1.5 text-xs font-medium rounded-lg text-slate-400 hover:text-white">16:9</button>
                     </div>
-                    <input type="range" id="gapInput" min="0" max="40" value="12" class="w-full accent-indigo-600 cursor-pointer">
                 </div>
 
-                <!-- Padding Outer Slider -->
-                <div class="space-y-2">
-                    <div class="flex justify-between text-xs font-medium text-slate-600">
-                        <span>ระยะขอบภายนอก (Padding)</span>
-                        <span id="paddingValueText" class="text-slate-500">16 px</span>
+                <!-- Sliders for Spacing -->
+                <div class="space-y-3 pt-2 border-t border-slate-800">
+                    <div class="space-y-1">
+                        <div class="flex justify-between text-xs text-slate-300">
+                            <span>ระยะห่างระหว่างภาพ (Gap)</span>
+                            <span id="gapValueText" class="text-indigo-400 font-mono">12 px</span>
+                        </div>
+                        <input type="range" id="gapInput" min="0" max="40" value="12" class="w-full accent-indigo-500 cursor-pointer">
                     </div>
-                    <input type="range" id="paddingInput" min="0" max="60" value="16" class="w-full accent-indigo-600 cursor-pointer">
+                    <div class="space-y-1">
+                        <div class="flex justify-between text-xs text-slate-300">
+                            <span>ระยะขอบนอก (Padding)</span>
+                            <span id="paddingValueText" class="text-indigo-400 font-mono">16 px</span>
+                        </div>
+                        <input type="range" id="paddingInput" min="0" max="60" value="16" class="w-full accent-indigo-500 cursor-pointer">
+                    </div>
+                    <div class="space-y-1">
+                        <div class="flex justify-between text-xs text-slate-300">
+                            <span>ความมนขอบภาพ (Border Radius)</span>
+                            <span id="radiusValueText" class="text-indigo-400 font-mono">12 px</span>
+                        </div>
+                        <input type="range" id="radiusInput" min="0" max="40" value="12" class="w-full accent-indigo-500 cursor-pointer">
+                    </div>
                 </div>
 
-                <!-- Border Radius Slider -->
-                <div class="space-y-2">
-                    <div class="flex justify-between text-xs font-medium text-slate-600">
-                        <span>ความมนของขอบภาพ (Border Radius)</span>
-                        <span id="radiusValueText" class="text-slate-500">8 px</span>
-                    </div>
-                    <input type="range" id="radiusInput" min="0" max="30" value="8" class="w-full accent-indigo-600 cursor-pointer">
-                </div>
-
-                <!-- Background Color Picker -->
-                <div class="space-y-2">
-                    <label class="text-xs font-medium text-slate-600 block">สีพื้นหลัง (Background Color)</label>
+                <!-- Background Customizer -->
+                <div class="space-y-2 pt-2 border-t border-slate-800">
+                    <label class="text-xs font-medium text-slate-300 block">สี & ลวดลายพื้นหลัง</label>
                     <div class="flex items-center gap-2">
-                        <input type="color" id="bgColorInput" value="#ffffff" class="w-10 h-10 rounded-lg cursor-pointer border border-slate-200 p-0.5">
-                        <div class="flex gap-1.5 flex-1">
-                            <button data-color="#ffffff" class="preset-color w-7 h-7 rounded-full bg-white border border-slate-300 shadow-sm hover:scale-110 transition"></button>
-                            <button data-color="#f8fafc" class="preset-color w-7 h-7 rounded-full bg-slate-100 border border-slate-300 shadow-sm hover:scale-110 transition"></button>
-                            <button data-color="#0f172a" class="preset-color w-7 h-7 rounded-full bg-slate-900 border border-slate-300 shadow-sm hover:scale-110 transition"></button>
-                            <button data-color="#fef2f2" class="preset-color w-7 h-7 rounded-full bg-red-100 border border-red-200 shadow-sm hover:scale-110 transition"></button>
-                            <button data-color="#f0fdf4" class="preset-color w-7 h-7 rounded-full bg-green-100 border border-green-200 shadow-sm hover:scale-110 transition"></button>
-                            <button data-color="#eef2ff" class="preset-color w-7 h-7 rounded-full bg-indigo-100 border border-indigo-200 shadow-sm hover:scale-110 transition"></button>
+                        <input type="color" id="bgColorInput" value="#1e293b" class="w-9 h-9 rounded-xl cursor-pointer bg-transparent border border-slate-700 p-0.5">
+                        <div class="flex gap-1.5 flex-1 overflow-x-auto py-1">
+                            <button data-color="#ffffff" class="preset-color w-7 h-7 rounded-full bg-white border border-slate-400 flex-shrink-0"></button>
+                            <button data-color="#0f172a" class="preset-color w-7 h-7 rounded-full bg-slate-900 border border-slate-700 flex-shrink-0"></button>
+                            <button data-color="#f8fafc" class="preset-color w-7 h-7 rounded-full bg-slate-100 border border-slate-300 flex-shrink-0"></button>
+                            <button data-color="#f1f5f9" class="preset-color w-7 h-7 rounded-full bg-slate-200 border border-slate-300 flex-shrink-0"></button>
+                            <button data-color="#fef2f2" class="preset-color w-7 h-7 rounded-full bg-red-100 border border-red-300 flex-shrink-0"></button>
+                            <button data-color="#eef2ff" class="preset-color w-7 h-7 rounded-full bg-indigo-100 border border-indigo-300 flex-shrink-0"></button>
+                            <button data-color="#f0fdf4" class="preset-color w-7 h-7 rounded-full bg-emerald-100 border border-emerald-300 flex-shrink-0"></button>
+                            <button data-color="#fffbeb" class="preset-color w-7 h-7 rounded-full bg-amber-100 border border-amber-300 flex-shrink-0"></button>
                         </div>
                     </div>
                 </div>
+            </div>
 
-                <!-- Format Option -->
-                <div class="space-y-2 pt-2 border-t border-slate-100">
-                    <label class="text-xs font-medium text-slate-600 block">ฟอร์แมตไฟล์ดาวน์โหลด</label>
-                    <div class="grid grid-cols-2 gap-2">
-                        <label class="flex items-center gap-2 p-2 rounded-xl border border-slate-200 bg-slate-50 cursor-pointer hover:bg-white text-xs">
-                            <input type="radio" name="exportFormat" value="png" checked class="accent-indigo-600">
-                            <span class="font-medium text-slate-700">PNG (คมชัดสูง)</span>
-                        </label>
-                        <label class="flex items-center gap-2 p-2 rounded-xl border border-slate-200 bg-slate-50 cursor-pointer hover:bg-white text-xs">
-                            <input type="radio" name="exportFormat" value="jpeg" class="accent-indigo-600">
-                            <span class="font-medium text-slate-700">JPG (ไฟล์เล็ก)</span>
-                        </label>
+            <!-- Tab 3: Filters & Adjustments -->
+            <div id="tab-filters" class="tab-content glass-panel rounded-2xl p-4 space-y-4 hidden">
+                <h2 class="text-sm font-semibold text-white flex items-center gap-2">
+                    <i class="fa-solid fa-wand-magic text-indigo-400"></i> ฟิลเตอร์ & ปรับสีภาพ
+                </h2>
+
+                <!-- Preset Filters -->
+                <div class="space-y-2">
+                    <label class="text-xs font-medium text-slate-300 block">ฟิลเตอร์สำเร็จรูป</label>
+                    <div class="grid grid-cols-3 gap-2" id="filterPresets">
+                        <button data-filter="none" class="filter-btn py-2 px-2 rounded-xl border border-indigo-500 bg-indigo-500/20 text-indigo-300 text-xs font-medium">ปกติ</button>
+                        <button data-filter="grayscale" class="filter-btn py-2 px-2 rounded-xl glass-card hover:border-slate-600 text-slate-300 text-xs font-medium">ขาวดำ</button>
+                        <button data-filter="sepia" class="filter-btn py-2 px-2 rounded-xl glass-card hover:border-slate-600 text-slate-300 text-xs font-medium">วินเทจ</button>
+                        <button data-filter="warm" class="filter-btn py-2 px-2 rounded-xl glass-card hover:border-slate-600 text-slate-300 text-xs font-medium">อบอุ่น</button>
+                        <button data-filter="cool" class="filter-btn py-2 px-2 rounded-xl glass-card hover:border-slate-600 text-slate-300 text-xs font-medium">โทนเย็น</button>
+                        <button data-filter="dramatic" class="filter-btn py-2 px-2 rounded-xl glass-card hover:border-slate-600 text-slate-300 text-xs font-medium">เข้มสดใส</button>
                     </div>
                 </div>
 
+                <!-- Custom Slider Controls -->
+                <div class="space-y-3 pt-2 border-t border-slate-800">
+                    <div class="space-y-1">
+                        <div class="flex justify-between text-xs text-slate-300">
+                            <span>ความสว่าง (Brightness)</span>
+                            <span id="brightnessVal" class="text-indigo-400 font-mono">100%</span>
+                        </div>
+                        <input type="range" id="brightnessInput" min="50" max="150" value="100" class="w-full accent-indigo-500 cursor-pointer">
+                    </div>
+                    <div class="space-y-1">
+                        <div class="flex justify-between text-xs text-slate-300">
+                            <span>ความคมชัด (Contrast)</span>
+                            <span id="contrastVal" class="text-indigo-400 font-mono">100%</span>
+                        </div>
+                        <input type="range" id="contrastInput" min="50" max="150" value="100" class="w-full accent-indigo-500 cursor-pointer">
+                    </div>
+                    <div class="space-y-1">
+                        <div class="flex justify-between text-xs text-slate-300">
+                            <span>ความอิ่มสี (Saturation)</span>
+                            <span id="saturationVal" class="text-indigo-400 font-mono">100%</span>
+                        </div>
+                        <input type="range" id="saturationInput" min="0" max="200" value="100" class="w-full accent-indigo-500 cursor-pointer">
+                    </div>
+                    <div class="space-y-1">
+                        <div class="flex justify-between text-xs text-slate-300">
+                            <span>ความเบลอ (Blur)</span>
+                            <span id="blurVal" class="text-indigo-400 font-mono">0 px</span>
+                        </div>
+                        <input type="range" id="blurInput" min="0" max="10" value="0" class="w-full accent-indigo-500 cursor-pointer">
+                    </div>
+                </div>
             </div>
+
+            <!-- Tab 4: Decorate (Text & Watermark) -->
+            <div id="tab-decor" class="tab-content glass-panel rounded-2xl p-4 space-y-4 hidden">
+                <h2 class="text-sm font-semibold text-white flex items-center gap-2">
+                    <i class="fa-solid fa-font text-indigo-400"></i> ข้อความ & ลายน้ำ
+                </h2>
+
+                <div class="space-y-3">
+                    <div class="space-y-1">
+                        <label class="text-xs font-medium text-slate-300">ข้อความลายน้ำ / หัวเรื่อง</label>
+                        <input type="text" id="watermarkTextInput" placeholder="เช่น Happy Memories ✨" class="w-full px-3 py-2 bg-slate-900/80 border border-slate-700 rounded-xl text-xs text-white focus:outline-none focus:border-indigo-500">
+                    </div>
+
+                    <div class="grid grid-cols-2 gap-2">
+                        <div class="space-y-1">
+                            <label class="text-xs font-medium text-slate-300">สีข้อความ</label>
+                            <input type="color" id="textColorInput" value="#ffffff" class="w-full h-8 rounded-lg cursor-pointer bg-transparent border border-slate-700 p-0.5">
+                        </div>
+                        <div class="space-y-1">
+                            <label class="text-xs font-medium text-slate-300">ตำแหน่ง</label>
+                            <select id="textPosSelect" class="w-full px-2 py-1.5 bg-slate-900 border border-slate-700 rounded-lg text-xs text-slate-200">
+                                <option value="bottom-center">ด้านล่างตรงกลาง</option>
+                                <option value="bottom-right">ล่างขวา</option>
+                                <option value="top-center">ด้านบนตรงกลาง</option>
+                                <option value="none">ไม่ใส่ข้อความ</option>
+                            </select>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
         </div>
 
-        <!-- Live Preview / Canvas Container (Right Side - 8 Cols) -->
-        <div class="lg:col-span-7 xl:col-span-8 flex flex-col h-full">
-            <div class="bg-white rounded-2xl border border-slate-200 shadow-sm p-4 sm:p-6 flex-1 flex flex-col">
-                <div class="flex items-center justify-between mb-4">
-                    <h2 class="font-semibold text-slate-800 flex items-center gap-2">
-                        <i class="fa-regular fa-image text-indigo-600"></i> ตัวอย่างภาพรวม (Live Preview)
-                    </h2>
-                    <span id="canvasDimensionText" class="text-xs text-slate-400 font-mono">0 x 0 px</span>
+        <!-- Live Preview Stage (Right Side - 8 Cols) -->
+        <div class="lg:col-span-7 xl:col-span-8 flex flex-col h-full min-h-[500px]">
+            <div class="glass-panel rounded-2xl p-4 sm:p-6 flex-1 flex flex-col border border-slate-800">
+                
+                <!-- Stage Header -->
+                <div class="flex flex-wrap items-center justify-between gap-2 mb-4 pb-3 border-b border-slate-800/80">
+                    <div class="flex items-center gap-2">
+                        <span class="w-3 h-3 rounded-full bg-emerald-500 animate-pulse"></span>
+                        <h2 class="font-semibold text-white text-sm sm:text-base">พื้นที่แก้ไข & พรีวิว (Canvas Preview)</h2>
+                    </div>
+
+                    <!-- Dimension Info & Quick Hint -->
+                    <div class="flex items-center gap-3">
+                        <span id="canvasDimensionText" class="text-xs font-mono text-indigo-400 bg-indigo-500/10 px-2.5 py-1 rounded-lg border border-indigo-500/20">0 x 0 px</span>
+                    </div>
                 </div>
 
-                <!-- Preview Display Box -->
-                <div id="previewWrapper" class="flex-1 bg-slate-100/70 rounded-xl border border-slate-200/60 p-4 flex items-center justify-center overflow-auto min-h-[400px]">
+                <!-- Interactive Hint Overlay -->
+                <div class="bg-indigo-950/40 border border-indigo-500/20 rounded-xl p-2.5 mb-4 flex items-center justify-between text-xs text-indigo-200">
+                    <span class="flex items-center gap-1.5">
+                        <i class="fa-solid fa-hand-pointer text-indigo-400"></i>
+                        <span><strong>เคล็ดลับ:</strong> คลิกแล้วลากรูปเพื่อปรับตำแหน่งขยับรูปข้างใน หรือลากสลับช่องภาพได้</span>
+                    </span>
+                    <span class="text-[10px] bg-indigo-500/20 text-indigo-300 px-2 py-0.5 rounded-full hidden sm:inline">Interactive Drag</span>
+                </div>
+
+                <!-- Canvas Preview Container Box -->
+                <div id="previewWrapper" class="flex-1 bg-slate-950/60 rounded-xl border border-slate-800/80 p-4 sm:p-8 flex items-center justify-center overflow-auto min-h-[380px] relative">
                     
-                    <!-- Placeholder state when no images loaded -->
+                    <!-- Empty State Placeholder -->
                     <div id="emptyState" class="text-center p-8 max-w-sm">
-                        <div class="w-16 h-16 bg-slate-200/60 rounded-2xl text-slate-400 flex items-center justify-center mx-auto mb-4">
-                            <i class="fa-regular fa-images text-3xl"></i>
+                        <div class="w-16 h-16 bg-slate-800/80 text-indigo-400 rounded-2xl border border-slate-700/80 flex items-center justify-center mx-auto mb-4 shadow-xl">
+                            <i class="fa-solid fa-images text-3xl"></i>
                         </div>
-                        <h3 class="font-semibold text-slate-700 text-base mb-1">ยังไม่มีรูปภาพ</h3>
-                        <p class="text-xs text-slate-500 leading-relaxed mb-4">อัปโหลดภาพจำนวน 5 ถึง 20 ภาพที่แถบด้านข้าง หรือใช้รูปตัวอย่างเพื่อทดลองใช้</p>
-                        <button id="emptyUploadBtn" class="bg-indigo-50 hover:bg-indigo-100 text-indigo-600 border border-indigo-200 text-xs font-semibold px-4 py-2 rounded-xl transition">
-                            เลือกรูปภาพตัวอย่าง
+                        <h3 class="font-semibold text-white text-base mb-1">ยังไม่มีรูปภาพในกรอบ</h3>
+                        <p class="text-xs text-slate-400 leading-relaxed mb-4">อัปโหลดภาพของคุณ หรือทดลองใช้ภาพตัวอย่างเพื่อเริ่มต้นจัดเลย์เอาต์</p>
+                        <button id="emptyUploadBtn" class="bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-semibold px-4 py-2.5 rounded-xl shadow-lg transition">
+                            <i class="fa-solid fa-wand-magic-sparkles mr-1"></i> โหลดรูปตัวอย่าง 6 ภาพ
                         </button>
                     </div>
 
-                    <!-- Hidden Real Canvas for Exporting -->
-                    <canvas id="exportCanvas" class="hidden"></canvas>
-
-                    <!-- HTML Rendered Dynamic Canvas Preview -->
-                    <div id="collagePreview" class="shadow-xl transition-all duration-300 hidden max-w-full overflow-hidden" style="background-color: #ffffff;">
-                        <!-- Dynamic Grid content will be rendered here via JS -->
+                    <!-- Dynamic Rendered Collage Stage -->
+                    <div id="collageStage" class="shadow-2xl transition-all duration-300 hidden relative overflow-hidden" style="background-color: #1e293b;">
+                        <!-- Dynamic Collage items rendered via JS -->
                     </div>
+
+                    <!-- Hidden Render Canvas for High-Res Export -->
+                    <canvas id="exportCanvas" class="hidden"></canvas>
 
                 </div>
             </div>
@@ -236,107 +399,108 @@
 
     </main>
 
-    <!-- Save Preview / Fallback Modal (Optimized for Mobile / iOS) -->
-    <div id="exportModal" class="fixed inset-0 bg-slate-900/70 backdrop-blur-sm z-50 flex items-center justify-center p-4 opacity-0 pointer-events-none transition-opacity duration-300">
-        <div class="bg-white rounded-2xl max-w-2xl w-full max-h-[90vh] flex flex-col shadow-2xl overflow-hidden transform scale-95 transition-transform duration-300">
-            <div class="p-4 border-b border-slate-100 flex items-center justify-between bg-slate-50">
-                <div class="flex items-center gap-2 text-slate-800 font-semibold text-sm sm:text-base">
-                    <i class="fa-solid fa-circle-check text-emerald-500"></i>
-                    <span>ประมวลผลรูปภาพเรียบร้อย</span>
+    <!-- Export Result Modal (Optimized for Mobile/iOS) -->
+    <div id="exportModal" class="fixed inset-0 bg-slate-950/80 backdrop-blur-md z-50 flex items-center justify-center p-4 opacity-0 pointer-events-none transition-opacity duration-300">
+        <div class="glass-panel rounded-2xl max-w-2xl w-full max-h-[90vh] flex flex-col shadow-2xl border border-slate-700/80 overflow-hidden transform scale-95 transition-transform duration-300">
+            <div class="p-4 border-b border-slate-800 flex items-center justify-between bg-slate-900/60">
+                <div class="flex items-center gap-2 text-white font-semibold text-sm">
+                    <i class="fa-solid fa-circle-check text-emerald-400 text-base"></i>
+                    <span>ประมวลผลรูปภาพเรียบร้อยแล้ว</span>
                 </div>
-                <button id="closeModalBtn" class="w-8 h-8 rounded-full bg-slate-200 hover:bg-slate-300 text-slate-600 flex items-center justify-center text-xs transition">
+                <button id="closeModalBtn" class="w-8 h-8 rounded-full bg-slate-800 hover:bg-slate-700 text-slate-300 flex items-center justify-center text-xs transition">
                     <i class="fa-solid fa-xmark"></i>
                 </button>
             </div>
             
-            <div class="p-4 overflow-y-auto flex-1 flex flex-col items-center justify-center bg-slate-900/5">
-                <p class="text-xs text-slate-500 mb-3 text-center">
-                    <span class="sm:hidden font-medium text-indigo-600"><i class="fa-solid fa-hand-pointer"></i> แตะค้างที่รูปด้านล่าง แล้วเลือก "บันทึกไปยังแอปรูปภาพ" (Save to Photos)</span>
-                    <span class="hidden sm:inline">หากระบบไม่ดาวน์โหลดอัตโนมัติ คุณสามารถคลิกขวาเพื่อคัดลอกหรือบันทึกรูปภาพได้</span>
+            <div class="p-4 overflow-y-auto flex-1 flex flex-col items-center justify-center bg-slate-950/40">
+                <p class="text-xs text-slate-300 mb-3 text-center">
+                    <span class="sm:hidden font-medium text-indigo-400 block mb-1"><i class="fa-solid fa-hand-pointer"></i> แตะค้างที่รูปภาพด้านล่างเพื่อ "บันทึกไปยังแอปรูปภาพ" (Save to Photos)</span>
+                    <span class="hidden sm:inline">คลิกขวาที่รูปเพื่อบันทึก หรือกดปุ่มดาวน์โหลดด้านล่าง</span>
                 </p>
-                <div class="max-w-full max-h-[60vh] rounded-xl overflow-hidden shadow-lg bg-white border border-slate-200 flex justify-center items-center">
-                    <img id="exportResultImg" class="max-w-full max-h-[60vh] object-contain block" alt="Collage Export Result">
+                <div class="max-w-full max-h-[58vh] rounded-xl overflow-hidden shadow-2xl bg-slate-900 border border-slate-800 flex justify-center items-center">
+                    <img id="exportResultImg" class="max-w-full max-h-[58vh] object-contain block" alt="Collage Export Result">
                 </div>
             </div>
 
-            <div class="p-4 border-t border-slate-100 flex flex-wrap gap-2 justify-end bg-slate-50">
-                <button id="openNewTabBtn" class="px-4 py-2 bg-slate-200 hover:bg-slate-300 text-slate-700 text-xs font-semibold rounded-xl transition flex items-center gap-1.5">
-                    <i class="fa-solid fa-arrow-up-right-from-square"></i> เปิดในแท็บใหม่
+            <div class="p-4 border-t border-slate-800 flex flex-wrap gap-2 justify-end bg-slate-900/60">
+                <button id="openNewTabBtn" class="px-4 py-2 bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-medium rounded-xl transition flex items-center gap-1.5">
+                    <i class="fa-solid fa-arrow-up-right-from-square"></i> เปิดแท็บใหม่
                 </button>
-                <button id="directDownloadBtn" class="px-5 py-2 bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-semibold rounded-xl shadow-sm transition flex items-center gap-1.5">
-                    <i class="fa-solid fa-download"></i> ดาวน์โหลดไฟล์อีกครั้ง
+                <button id="directDownloadBtn" class="px-5 py-2 bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-semibold rounded-xl shadow-lg transition flex items-center gap-1.5">
+                    <i class="fa-solid fa-download"></i> บันทึกภาพลงเครื่อง
                 </button>
             </div>
         </div>
     </div>
 
-    <!-- Notification / Toast Container -->
-    <div id="toast" class="fixed bottom-5 right-5 bg-slate-800 text-white text-xs font-medium px-4 py-3 rounded-xl shadow-xl transition-all duration-300 opacity-0 transform translate-y-4 pointer-events-none z-50 flex items-center gap-2">
+    <!-- Toast Notification -->
+    <div id="toast" class="fixed bottom-5 right-5 bg-slate-900 text-white text-xs font-medium px-4 py-3 rounded-xl shadow-2xl border border-slate-700 transition-all duration-300 opacity-0 transform translate-y-4 pointer-events-none z-50 flex items-center gap-2">
         <i id="toastIcon" class="fa-solid fa-circle-check text-emerald-400 text-sm"></i>
         <span id="toastMessage">ข้อความแจ้งเตือน</span>
     </div>
 
-    <!-- JavaScript Logic -->
+    <!-- JavaScript Core Logic -->
     <script>
-        // Application State
+        // Application Global State
         const state = {
-            images: [], // List of loaded Image objects with meta
+            images: [], // List of { id, imgObj, src, posX: 50, posY: 50, zoom: 1 }
             columns: 3,
             gap: 12,
             padding: 16,
-            borderRadius: 8,
-            bgColor: '#ffffff',
-            aspectRatio: 1, // 1:1 square default, 'auto' or numeric
-            format: 'png'
+            borderRadius: 12,
+            bgColor: '#1e293b',
+            aspectRatio: 1, // 1:1, 0.75, 1.333, etc.
+            template: 'grid', // 'grid', 'story', 'polaroid', 'filmstrip'
+            filters: {
+                preset: 'none',
+                brightness: 100,
+                contrast: 100,
+                saturation: 100,
+                blur: 0
+            },
+            watermark: {
+                text: '',
+                color: '#ffffff',
+                position: 'bottom-center'
+            },
+            dragSourceIndex: null
         };
 
-        // DOM Elements
+        // DOM Element Selectors
         const dropZone = document.getElementById('dropZone');
         const fileInput = document.getElementById('fileInput');
-        const thumbnailContainer = document.getElementById('thumbnailContainer');
-        const imageCounter = document.getElementById('imageCounter');
+        const reorderList = document.getElementById('reorderList');
+        const imageCounterText = document.getElementById('imageCounterText');
         const clearAllBtn = document.getElementById('clearAllBtn');
         const shuffleBtn = document.getElementById('shuffleBtn');
+        const addSampleBtn = document.getElementById('addSampleBtn');
         const downloadBtn = document.getElementById('downloadBtn');
         const emptyState = document.getElementById('emptyState');
         const emptyUploadBtn = document.getElementById('emptyUploadBtn');
-        const collagePreview = document.getElementById('collagePreview');
+        const collageStage = document.getElementById('collageStage');
         const exportCanvas = document.getElementById('exportCanvas');
         const canvasDimensionText = document.getElementById('canvasDimensionText');
+        const resetCanvasBtn = document.getElementById('resetCanvasBtn');
 
-        // Modal Elements
+        // Modal Selectors
         const exportModal = document.getElementById('exportModal');
         const exportResultImg = document.getElementById('exportResultImg');
         const closeModalBtn = document.getElementById('closeModalBtn');
         const openNewTabBtn = document.getElementById('openNewTabBtn');
         const directDownloadBtn = document.getElementById('directDownloadBtn');
 
-        // Controls Elements
-        const gapInput = document.getElementById('gapInput');
-        const gapValueText = document.getElementById('gapValueText');
-        const paddingInput = document.getElementById('paddingInput');
-        const paddingValueText = document.getElementById('paddingValueText');
-        const radiusInput = document.getElementById('radiusInput');
-        const radiusValueText = document.getElementById('radiusValueText');
-        const bgColorInput = document.getElementById('bgColorInput');
-        const colValueText = document.getElementById('colValueText');
-
         let currentBlobUrl = null;
 
-        // Toast Notification
-        function showToast(message, type = 'success') {
+        // Toast Helper
+        function showToast(msg, type = 'success') {
             const toast = document.getElementById('toast');
             const toastMessage = document.getElementById('toastMessage');
             const toastIcon = document.getElementById('toastIcon');
 
-            toastMessage.textContent = message;
-            if(type === 'success') {
-                toastIcon.className = 'fa-solid fa-circle-check text-emerald-400 text-sm';
-            } else if(type === 'warning') {
-                toastIcon.className = 'fa-solid fa-triangle-exclamation text-amber-400 text-sm';
-            } else {
-                toastIcon.className = 'fa-solid fa-circle-xmark text-rose-400 text-sm';
-            }
+            toastMessage.textContent = msg;
+            if (type === 'success') toastIcon.className = 'fa-solid fa-circle-check text-emerald-400 text-sm';
+            else if (type === 'warning') toastIcon.className = 'fa-solid fa-triangle-exclamation text-amber-400 text-sm';
+            else toastIcon.className = 'fa-solid fa-circle-xmark text-rose-400 text-sm';
 
             toast.classList.remove('opacity-0', 'translate-y-4', 'pointer-events-none');
             toast.classList.add('opacity-100', 'translate-y-0');
@@ -344,153 +508,250 @@
             setTimeout(() => {
                 toast.classList.remove('opacity-100', 'translate-y-0');
                 toast.classList.add('opacity-0', 'translate-y-4', 'pointer-events-none');
-            }, 3500);
+            }, 3000);
         }
 
-        // Initialize Events
+        // Init Tab Switching
+        function initTabs() {
+            document.querySelectorAll('.tab-btn').forEach(btn => {
+                btn.addEventListener('click', (e) => {
+                    document.querySelectorAll('.tab-btn').forEach(b => {
+                        b.classList.remove('bg-indigo-600', 'text-white', 'font-semibold', 'shadow-md');
+                        b.classList.add('text-slate-400');
+                    });
+                    document.querySelectorAll('.tab-content').forEach(c => c.classList.add('hidden'));
+
+                    const targetTab = e.currentTarget.dataset.tab;
+                    e.currentTarget.classList.add('bg-indigo-600', 'text-white', 'font-semibold', 'shadow-md');
+                    e.currentTarget.classList.remove('text-slate-400');
+                    document.getElementById(targetTab).classList.remove('hidden');
+                });
+            });
+        }
+
+        // Initialize Application Controls & Listeners
         function initEvents() {
-            // Dropzone drag & drop
-            ['dragenter', 'dragover'].forEach(eventName => {
-                dropZone.addEventListener(eventName, (e) => {
+            initTabs();
+
+            // Dropzone Handlers
+            ['dragenter', 'dragover'].forEach(name => {
+                dropZone.addEventListener(name, (e) => {
                     e.preventDefault();
                     e.stopPropagation();
-                    dropZone.classList.add('drag-over');
-                }, false);
+                    dropZone.classList.add('border-indigo-500', 'bg-indigo-950/40');
+                });
             });
 
-            ['dragleave', 'drop'].forEach(eventName => {
-                dropZone.addEventListener(eventName, (e) => {
+            ['dragleave', 'drop'].forEach(name => {
+                dropZone.addEventListener(name, (e) => {
                     e.preventDefault();
                     e.stopPropagation();
-                    dropZone.classList.remove('drag-over');
-                }, false);
+                    dropZone.classList.remove('border-indigo-500', 'bg-indigo-950/40');
+                });
             });
 
-            dropZone.addEventListener('drop', (e) => {
-                const dt = e.dataTransfer;
-                const files = dt.files;
-                handleFiles(files);
-            });
-
+            dropZone.addEventListener('drop', (e) => handleFiles(e.dataTransfer.files));
             dropZone.addEventListener('click', () => fileInput.click());
-            emptyUploadBtn.addEventListener('click', () => generateSampleImages());
             fileInput.addEventListener('change', (e) => handleFiles(e.target.files));
 
-            // Controls listeners
+            addSampleBtn.addEventListener('click', generateSampleImages);
+            emptyUploadBtn.addEventListener('click', generateSampleImages);
+            clearAllBtn.addEventListener('click', clearAllImages);
+            shuffleBtn.addEventListener('click', shuffleImages);
+            downloadBtn.addEventListener('click', processAndExportImage);
+
+            // Column Selector
             document.querySelectorAll('.col-btn').forEach(btn => {
                 btn.addEventListener('click', (e) => {
                     document.querySelectorAll('.col-btn').forEach(b => {
-                        b.classList.remove('bg-white', 'text-indigo-600', 'shadow-sm');
-                        b.classList.add('text-slate-600');
+                        b.classList.remove('bg-indigo-600', 'text-white', 'shadow-sm');
+                        b.classList.add('text-slate-400');
                     });
-                    e.currentTarget.classList.add('bg-white', 'text-indigo-600', 'shadow-sm');
-                    e.currentTarget.classList.remove('text-slate-600');
+                    e.currentTarget.classList.add('bg-indigo-600', 'text-white', 'shadow-sm');
+                    e.currentTarget.classList.remove('text-slate-400');
                     state.columns = parseInt(e.currentTarget.dataset.cols);
-                    colValueText.textContent = `${state.columns} คอลัมน์`;
+                    document.getElementById('colValueText').textContent = `${state.columns} คอลัมน์`;
                     renderCollage();
                 });
             });
 
+            // Template Selector
+            document.querySelectorAll('.template-btn').forEach(btn => {
+                btn.addEventListener('click', (e) => {
+                    document.querySelectorAll('.template-btn').forEach(b => {
+                        b.classList.remove('border-indigo-500/50', 'bg-indigo-500/10', 'text-indigo-300');
+                        b.classList.add('border-slate-800', 'glass-card', 'text-slate-300');
+                    });
+                    e.currentTarget.classList.add('border-indigo-500/50', 'bg-indigo-500/10', 'text-indigo-300');
+                    e.currentTarget.classList.remove('border-slate-800', 'glass-card', 'text-slate-300');
+                    
+                    state.template = e.currentTarget.dataset.template;
+                    applyTemplateSettings(state.template);
+                    renderCollage();
+                });
+            });
+
+            // Aspect Ratio Selector
             document.querySelectorAll('.aspect-btn').forEach(btn => {
                 btn.addEventListener('click', (e) => {
                     document.querySelectorAll('.aspect-btn').forEach(b => {
-                        b.classList.remove('bg-white', 'text-indigo-600', 'shadow-sm');
-                        b.classList.add('text-slate-600');
+                        b.classList.remove('bg-indigo-600', 'text-white');
+                        b.classList.add('text-slate-400');
                     });
-                    e.currentTarget.classList.add('bg-white', 'text-indigo-600', 'shadow-sm');
-                    e.currentTarget.classList.remove('text-slate-600');
-                    const val = e.currentTarget.dataset.aspect;
-                    state.aspectRatio = val === 'auto' ? 'auto' : parseFloat(val);
+                    e.currentTarget.classList.add('bg-indigo-600', 'text-white');
+                    e.currentTarget.classList.remove('text-slate-400');
+                    state.aspectRatio = parseFloat(e.currentTarget.dataset.aspect);
                     renderCollage();
                 });
             });
 
-            gapInput.addEventListener('input', (e) => {
+            // Sliders
+            document.getElementById('gapInput').addEventListener('input', (e) => {
                 state.gap = parseInt(e.target.value);
-                gapValueText.textContent = `${state.gap} px`;
+                document.getElementById('gapValueText').textContent = `${state.gap} px`;
                 renderCollage();
             });
 
-            paddingInput.addEventListener('input', (e) => {
+            document.getElementById('paddingInput').addEventListener('input', (e) => {
                 state.padding = parseInt(e.target.value);
-                paddingValueText.textContent = `${state.padding} px`;
+                document.getElementById('paddingValueText').textContent = `${state.padding} px`;
                 renderCollage();
             });
 
-            radiusInput.addEventListener('input', (e) => {
+            document.getElementById('radiusInput').addEventListener('input', (e) => {
                 state.borderRadius = parseInt(e.target.value);
-                radiusValueText.textContent = `${state.borderRadius} px`;
+                document.getElementById('radiusValueText').textContent = `${state.borderRadius} px`;
                 renderCollage();
             });
 
-            bgColorInput.addEventListener('input', (e) => {
+            document.getElementById('bgColorInput').addEventListener('input', (e) => {
                 state.bgColor = e.target.value;
                 renderCollage();
             });
 
             document.querySelectorAll('.preset-color').forEach(btn => {
                 btn.addEventListener('click', (e) => {
-                    const color = e.currentTarget.dataset.color;
-                    state.bgColor = color;
-                    bgColorInput.value = color;
+                    state.bgColor = e.currentTarget.dataset.color;
+                    document.getElementById('bgColorInput').value = state.bgColor;
                     renderCollage();
                 });
             });
 
-            document.querySelectorAll('input[name="exportFormat"]').forEach(radio => {
-                radio.addEventListener('change', (e) => {
-                    state.format = e.target.value;
+            // Filters & Sliders
+            document.querySelectorAll('.filter-btn').forEach(btn => {
+                btn.addEventListener('click', (e) => {
+                    document.querySelectorAll('.filter-btn').forEach(b => {
+                        b.classList.remove('border-indigo-500', 'bg-indigo-500/20', 'text-indigo-300');
+                        b.classList.add('glass-card', 'text-slate-300');
+                    });
+                    e.currentTarget.classList.add('border-indigo-500', 'bg-indigo-500/20', 'text-indigo-300');
+                    state.filters.preset = e.currentTarget.dataset.filter;
+                    renderCollage();
                 });
             });
 
-            clearAllBtn.addEventListener('click', clearAllImages);
-            shuffleBtn.addEventListener('click', shuffleImages);
-            downloadBtn.addEventListener('click', processAndSaveImage);
+            ['brightness', 'contrast', 'saturation', 'blur'].forEach(key => {
+                const slider = document.getElementById(`${key}Input`);
+                slider.addEventListener('input', (e) => {
+                    state.filters[key] = parseInt(e.target.value);
+                    document.getElementById(`${key}Val`).textContent = `${e.target.value}${key === 'blur' ? 'px' : '%'}`;
+                    renderCollage();
+                });
+            });
 
-            // Modal Handlers
+            // Watermark Decor Controls
+            document.getElementById('watermarkTextInput').addEventListener('input', (e) => {
+                state.watermark.text = e.target.value;
+                renderCollage();
+            });
+
+            document.getElementById('textColorInput').addEventListener('input', (e) => {
+                state.watermark.color = e.target.value;
+                renderCollage();
+            });
+
+            document.getElementById('textPosSelect').addEventListener('change', (e) => {
+                state.watermark.position = e.target.value;
+                renderCollage();
+            });
+
+            // Reset Button
+            resetCanvasBtn.addEventListener('click', () => {
+                state.columns = 3;
+                state.gap = 12;
+                state.padding = 16;
+                state.borderRadius = 12;
+                state.bgColor = '#1e293b';
+                state.aspectRatio = 1;
+                state.template = 'grid';
+                state.filters = { preset: 'none', brightness: 100, contrast: 100, saturation: 100, blur: 0 };
+                state.watermark = { text: '', color: '#ffffff', position: 'bottom-center' };
+                renderCollage();
+                showToast('รีเซ็ตการตั้งค่าเรียบร้อยแล้ว');
+            });
+
+            // Modal Events
             closeModalBtn.addEventListener('click', hideModal);
-            exportModal.addEventListener('click', (e) => {
-                if(e.target === exportModal) hideModal();
-            });
-
-            openNewTabBtn.addEventListener('click', () => {
-                if (currentBlobUrl) {
-                    window.open(currentBlobUrl, '_blank');
-                }
-            });
-
-            directDownloadBtn.addEventListener('click', () => {
-                if (currentBlobUrl) {
-                    triggerDownload(currentBlobUrl);
-                }
-            });
+            exportModal.addEventListener('click', (e) => { if(e.target === exportModal) hideModal(); });
+            openNewTabBtn.addEventListener('click', () => { if(currentBlobUrl) window.open(currentBlobUrl, '_blank'); });
+            directDownloadBtn.addEventListener('click', () => { if(currentBlobUrl) triggerDownload(currentBlobUrl); });
         }
 
-        // Handle uploaded image files
-        function handleFiles(files) {
-            const validFiles = Array.from(files).filter(file => file.type.startsWith('image/'));
-            if (validFiles.length === 0) {
-                showToast('กรุณาเลือกไฟล์รูปภาพเท่านั้น', 'warning');
-                return;
+        // Apply Layout Templates
+        function applyTemplateSettings(tmpl) {
+            if (tmpl === 'story') {
+                state.columns = 3;
+                state.aspectRatio = 0.5625; // 9:16
+                state.padding = 24;
+                state.gap = 12;
+                state.borderRadius = 16;
+            } else if (tmpl === 'polaroid') {
+                state.columns = 3;
+                state.aspectRatio = 0.85;
+                state.bgColor = '#e2e8f0';
+                state.padding = 20;
+                state.gap = 16;
+                state.borderRadius = 4;
+            } else if (tmpl === 'filmstrip') {
+                state.columns = 1;
+                state.aspectRatio = 1.333;
+                state.bgColor = '#000000';
+                state.padding = 30;
+                state.gap = 20;
+                state.borderRadius = 0;
+            } else { // Grid
+                state.columns = 3;
+                state.aspectRatio = 1;
+                state.gap = 12;
+                state.padding = 16;
             }
+        }
 
-            let loadedCount = 0;
-            validFiles.forEach(file => {
+        // Load Files
+        function handleFiles(files) {
+            const valid = Array.from(files).filter(f => f.type.startsWith('image/'));
+            if (valid.length === 0) return showToast('กรุณาเลือกไฟล์รูปภาพเท่านั้น', 'warning');
+
+            let count = 0;
+            valid.forEach(file => {
                 const reader = new FileReader();
                 reader.onload = (e) => {
                     const img = new Image();
-                    img.crossOrigin = "anonymous"; // Safe for Canvas
+                    img.crossOrigin = "anonymous";
                     img.onload = () => {
                         state.images.push({
                             id: Date.now() + Math.random(),
                             imgObj: img,
-                            src: e.target.result
+                            src: e.target.result,
+                            posX: 50, // Center position percentage
+                            posY: 50,
+                            zoom: 1
                         });
-                        loadedCount++;
-                        if (loadedCount === validFiles.length) {
+                        count++;
+                        if (count === valid.length) {
                             updateUI();
                             renderCollage();
-                            showToast(`เพิ่มรูปภาพสำเร็จ ${validFiles.length} รายการ`);
+                            showToast(`เพิ่มรูปภาพสำเร็จ ${valid.length} รายการ`);
                         }
                     };
                     img.src = e.target.result;
@@ -500,31 +761,32 @@
             fileInput.value = '';
         }
 
-        // Generate Sample Images locally via canvas (Pure DataURL - No CORS issue)
+        // Generate Sample High quality Canvas Images
         function generateSampleImages() {
-            const sampleColors = ['#f43f5e', '#3b82f6', '#10b981', '#f59e0b', '#8b5cf6', '#ec4899', '#06b6d4', '#84cc16'];
+            const colors = [
+                ['#f43f5e', '#fb7185'], ['#3b82f6', '#60a5fa'], 
+                ['#10b981', '#34d399'], ['#f59e0b', '#fbbf24'], 
+                ['#8b5cf6', '#a78bfa'], ['#ec4899', '#f472b6']
+            ];
             let loaded = 0;
-            const targetCount = 6;
 
-            for (let i = 0; i < targetCount; i++) {
+            for (let i = 0; i < 6; i++) {
                 const canvas = document.createElement('canvas');
-                canvas.width = 500;
-                canvas.height = 500;
+                canvas.width = 600;
+                canvas.height = 600;
                 const ctx = canvas.getContext('2d');
 
-                // Draw background gradient
-                const grad = ctx.createLinearGradient(0, 0, 500, 500);
-                grad.addColorStop(0, sampleColors[i % sampleColors.length]);
-                grad.addColorStop(1, sampleColors[(i + 2) % sampleColors.length]);
+                const grad = ctx.createLinearGradient(0, 0, 600, 600);
+                grad.addColorStop(0, colors[i][0]);
+                grad.addColorStop(1, colors[i][1]);
                 ctx.fillStyle = grad;
-                ctx.fillRect(0, 0, 500, 500);
+                ctx.fillRect(0, 0, 600, 600);
 
-                // Draw simple text icon
                 ctx.fillStyle = '#ffffff';
-                ctx.font = 'bold 80px Prompt, sans-serif';
+                ctx.font = 'bold 70px Prompt, sans-serif';
                 ctx.textAlign = 'center';
                 ctx.textBaseline = 'middle';
-                ctx.fillText(`ภาพที่ ${i + 1}`, 250, 250);
+                ctx.fillText(`ภาพที่ ${i + 1}`, 300, 300);
 
                 const dataUrl = canvas.toDataURL('image/png');
                 const img = new Image();
@@ -533,10 +795,13 @@
                     state.images.push({
                         id: Date.now() + Math.random(),
                         imgObj: img,
-                        src: dataUrl
+                        src: dataUrl,
+                        posX: 50,
+                        posY: 50,
+                        zoom: 1
                     });
                     loaded++;
-                    if (loaded === targetCount) {
+                    if (loaded === 6) {
                         updateUI();
                         renderCollage();
                         showToast('โหลดรูปภาพตัวอย่าง 6 ภาพเรียบร้อยแล้ว');
@@ -546,67 +811,95 @@
             }
         }
 
-        // Update Thumbnails & Action buttons state
+        // Update Thumbnails & Action controls
         function updateUI() {
-            const count = state.images.length;
-            imageCounter.textContent = `${count} ภาพ`;
-            
-            if (count >= 5 && count <= 20) {
-                imageCounter.className = "text-xs px-2.5 py-1 bg-emerald-100 text-emerald-700 rounded-full font-medium";
-            } else {
-                imageCounter.className = "text-xs px-2.5 py-1 bg-slate-100 text-slate-600 rounded-full font-medium";
-            }
+            const total = state.images.length;
+            imageCounterText.textContent = total;
 
-            clearAllBtn.disabled = count === 0;
-            shuffleBtn.disabled = count < 2;
-            downloadBtn.disabled = count === 0;
+            clearAllBtn.disabled = total === 0;
+            shuffleBtn.disabled = total < 2;
+            downloadBtn.disabled = total === 0;
 
-            if (count === 0) {
+            if (total === 0) {
                 emptyState.classList.remove('hidden');
-                collagePreview.classList.add('hidden');
-                thumbnailContainer.innerHTML = '';
+                collageStage.classList.add('hidden');
+                reorderList.innerHTML = '';
                 canvasDimensionText.textContent = '0 x 0 px';
                 return;
             }
 
             emptyState.classList.add('hidden');
-            collagePreview.classList.remove('hidden');
+            collageStage.classList.remove('hidden');
 
-            // Render Thumbnails
-            thumbnailContainer.innerHTML = '';
-            state.images.forEach((item, index) => {
+            // Render Thumbnails List with HTML5 Drag and Drop Reordering
+            reorderList.innerHTML = '';
+            state.images.forEach((item, idx) => {
                 const thumb = document.createElement('div');
-                thumb.className = 'relative group aspect-square rounded-lg overflow-hidden border border-slate-200 bg-slate-100';
+                thumb.draggable = true;
+                thumb.dataset.index = idx;
+                thumb.className = 'relative group aspect-square rounded-lg overflow-hidden border border-slate-700 bg-slate-800 cursor-grab active:cursor-grabbing transition';
+                
                 thumb.innerHTML = `
-                    <img src="${item.src}" class="w-full h-full object-cover">
-                    <button data-index="${index}" class="delete-thumb-btn absolute top-1 right-1 bg-rose-500 hover:bg-rose-600 text-white rounded-full w-5 h-5 flex items-center justify-center opacity-0 group-hover:opacity-100 transition duration-150 text-[10px]">
+                    <img src="${item.src}" class="w-full h-full object-cover pointer-events-none">
+                    <button data-index="${idx}" class="del-btn absolute top-1 right-1 bg-rose-500/90 hover:bg-rose-600 text-white rounded-full w-4 h-4 flex items-center justify-center opacity-0 group-hover:opacity-100 transition text-[9px]">
                         <i class="fa-solid fa-xmark"></i>
                     </button>
-                    <span class="absolute bottom-1 left-1 bg-black/60 text-white text-[9px] px-1.5 py-0.5 rounded font-mono">${index + 1}</span>
+                    <span class="absolute bottom-1 left-1 bg-black/70 text-indigo-300 text-[9px] px-1 rounded font-mono">${idx + 1}</span>
                 `;
-                thumbnailContainer.appendChild(thumb);
+
+                // Drag and Drop Thumbnail Events
+                thumb.addEventListener('dragstart', (e) => {
+                    state.dragSourceIndex = idx;
+                    e.currentTarget.classList.add('dragging');
+                });
+
+                thumb.addEventListener('dragend', (e) => {
+                    e.currentTarget.classList.remove('dragging');
+                    document.querySelectorAll('#reorderList > div').forEach(el => el.classList.remove('drag-over-item'));
+                });
+
+                thumb.addEventListener('dragover', (e) => {
+                    e.preventDefault();
+                    e.currentTarget.classList.add('drag-over-item');
+                });
+
+                thumb.addEventListener('dragleave', (e) => {
+                    e.currentTarget.classList.remove('drag-over-item');
+                });
+
+                thumb.addEventListener('drop', (e) => {
+                    e.preventDefault();
+                    const targetIdx = parseInt(e.currentTarget.dataset.index);
+                    if (state.dragSourceIndex !== null && state.dragSourceIndex !== targetIdx) {
+                        // Swap Images
+                        const movedItem = state.images.splice(state.dragSourceIndex, 1)[0];
+                        state.images.splice(targetIdx, 0, movedItem);
+                        updateUI();
+                        renderCollage();
+                    }
+                });
+
+                reorderList.appendChild(thumb);
             });
 
-            // Delete single thumbnail
-            document.querySelectorAll('.delete-thumb-btn').forEach(btn => {
+            // Single Delete button
+            document.querySelectorAll('.del-btn').forEach(btn => {
                 btn.addEventListener('click', (e) => {
                     e.stopPropagation();
-                    const idx = parseInt(e.currentTarget.dataset.index);
-                    state.images.splice(idx, 1);
+                    const i = parseInt(e.currentTarget.dataset.index);
+                    state.images.splice(i, 1);
                     updateUI();
                     renderCollage();
                 });
             });
         }
 
-        // Clear all uploaded images
         function clearAllImages() {
             state.images = [];
             updateUI();
-            showToast('ลบรูปภาพทั้งหมดแล้ว');
+            showToast('ลบภาพทั้งหมดแล้ว');
         }
 
-        // Shuffle image order
         function shuffleImages() {
             for (let i = state.images.length - 1; i > 0; i--) {
                 const j = Math.floor(Math.random() * (i + 1));
@@ -614,57 +907,132 @@
             }
             updateUI();
             renderCollage();
-            showToast('สลับตำแหน่งรูปภาพเรียบร้อย');
+            showToast('สลับตำแหน่งรูปภาพเรียบร้อยแล้ว');
         }
 
-        // Render Collage Grid into Live Preview HTML & Canvas
+        // Main Render Function for Live Preview Stage
         function renderCollage() {
             if (state.images.length === 0) return;
 
-            // Update Preview CSS Grid Styles
-            collagePreview.style.backgroundColor = state.bgColor;
-            collagePreview.style.padding = `${state.padding}px`;
-            collagePreview.style.display = 'grid';
-            collagePreview.style.gridTemplateColumns = `repeat(${state.columns}, minmax(0, 1fr))`;
-            collagePreview.style.gap = `${state.gap}px`;
-            collagePreview.style.borderRadius = '16px';
+            // Apply Stage Container Styles
+            collageStage.style.backgroundColor = state.bgColor;
+            collageStage.style.padding = `${state.padding}px`;
+            collageStage.style.display = 'grid';
+            collageStage.style.gridTemplateColumns = `repeat(${state.columns}, minmax(0, 1fr))`;
+            collageStage.style.gap = `${state.gap}px`;
+            collageStage.style.borderRadius = `${state.borderRadius + 4}px`;
 
-            collagePreview.innerHTML = '';
+            // Preset Special Template Class Modifiers
+            collageStage.className = 'shadow-2xl transition-all duration-300 relative overflow-hidden ';
+            if (state.template === 'filmstrip') collageStage.classList.add('preset-filmstrip');
 
-            state.images.forEach((item) => {
+            // Apply Filters Style String
+            const f = state.filters;
+            let filterCss = `brightness(${f.brightness}%) contrast(${f.contrast}%) saturate(${f.saturation}%) blur(${f.blur}px)`;
+            if (f.preset === 'grayscale') filterCss += ' grayscale(100%)';
+            else if (f.preset === 'sepia') filterCss += ' sepia(100%)';
+            else if (f.preset === 'warm') filterCss += ' sepia(30%) hue-rotate(-10deg)';
+            else if (f.preset === 'cool') filterCss += ' hue-rotate(30deg)';
+            else if (f.preset === 'dramatic') filterCss += ' contrast(140%) saturate(140%)';
+
+            collageStage.innerHTML = '';
+
+            state.images.forEach((item, index) => {
                 const card = document.createElement('div');
                 card.style.borderRadius = `${state.borderRadius}px`;
-                card.className = 'overflow-hidden flex items-center justify-center bg-slate-200/50 relative';
-                
-                if (state.aspectRatio === 'auto') {
-                    card.style.height = 'auto';
-                } else {
-                    card.style.aspectRatio = `${state.aspectRatio}`;
-                }
+                card.style.aspectRatio = `${state.aspectRatio}`;
+                card.className = 'overflow-hidden relative bg-slate-900/40 border border-white/10 group cursor-move select-none';
 
+                if (state.template === 'polaroid') card.classList.add('preset-polaroid');
+
+                // Image Element with position panning support
                 const img = document.createElement('img');
                 img.src = item.src;
-                img.className = 'w-full h-full object-cover block';
+                img.className = 'w-full h-full object-cover block pointer-events-none transition-transform duration-75';
+                img.style.filter = filterCss;
+                img.style.objectPosition = `${item.posX}% ${item.posY}%`;
+                img.style.transform = `scale(${item.zoom})`;
+
                 card.appendChild(img);
 
-                collagePreview.appendChild(card);
+                // Quick Action Overlay Controls on Hover
+                const overlay = document.createElement('div');
+                overlay.className = 'absolute inset-0 bg-indigo-950/40 opacity-0 group-hover:opacity-100 transition flex items-center justify-center gap-1.5 p-2';
+                overlay.innerHTML = `
+                    <button data-idx="${index}" class="zoom-in-btn w-7 h-7 bg-black/60 hover:bg-indigo-600 text-white rounded-lg text-xs flex items-center justify-center"><i class="fa-solid fa-magnifying-glass-plus"></i></button>
+                    <button data-idx="${index}" class="zoom-out-btn w-7 h-7 bg-black/60 hover:bg-indigo-600 text-white rounded-lg text-xs flex items-center justify-center"><i class="fa-solid fa-magnifying-glass-minus"></i></button>
+                `;
+                card.appendChild(overlay);
+
+                // Interactive Click & Drag Image Frame Panning (Pan image inside frame)
+                let isDragging = false;
+                let startX, startY;
+
+                card.addEventListener('mousedown', (e) => {
+                    if (e.target.tagName === 'BUTTON' || e.target.closest('button')) return;
+                    isDragging = true;
+                    startX = e.clientX;
+                    startY = e.clientY;
+                });
+
+                window.addEventListener('mousemove', (e) => {
+                    if (!isDragging) return;
+                    const dx = (e.clientX - startX) * 0.2;
+                    const dy = (e.clientY - startY) * 0.2;
+
+                    item.posX = Math.min(100, Math.max(0, item.posX - dx));
+                    item.posY = Math.min(100, Math.max(0, item.posY - dy));
+
+                    img.style.objectPosition = `${item.posX}% ${item.posY}%`;
+                    startX = e.clientX;
+                    startY = e.clientY;
+                });
+
+                window.addEventListener('mouseup', () => { isDragging = false; });
+
+                collageStage.appendChild(card);
             });
 
-            // Sync Export Canvas
+            // Zoom Handlers
+            document.querySelectorAll('.zoom-in-btn').forEach(btn => {
+                btn.addEventListener('click', (e) => {
+                    e.stopPropagation();
+                    const i = parseInt(e.currentTarget.dataset.idx);
+                    state.images[i].zoom = Math.min(2.5, state.images[i].zoom + 0.2);
+                    renderCollage();
+                });
+            });
+
+            document.querySelectorAll('.zoom-out-btn').forEach(btn => {
+                btn.addEventListener('click', (e) => {
+                    e.stopPropagation();
+                    const i = parseInt(e.currentTarget.dataset.idx);
+                    state.images[i].zoom = Math.max(1.0, state.images[i].zoom - 0.2);
+                    renderCollage();
+                });
+            });
+
+            // Watermark Text Render if enabled
+            if (state.watermark.text && state.watermark.position !== 'none') {
+                const wm = document.createElement('div');
+                wm.className = 'col-span-full text-center py-2 font-medium text-sm tracking-wide';
+                wm.style.color = state.watermark.color;
+                wm.textContent = state.watermark.text;
+
+                if (state.watermark.position === 'top-center') collageStage.prepend(wm);
+                else collageStage.appendChild(wm);
+            }
+
             calculateCanvasSize();
         }
 
-        // Calculate Canvas Dimensions
+        // Calculate High-Res Export Canvas Dimensions
         function calculateCanvasSize() {
             const colCount = state.columns;
             const rowCount = Math.ceil(state.images.length / colCount);
             
-            const itemWidth = 500;
-            let itemHeight = 500;
-
-            if (state.aspectRatio !== 'auto') {
-                itemHeight = itemWidth / state.aspectRatio;
-            }
+            const itemWidth = 600;
+            const itemHeight = itemWidth / state.aspectRatio;
 
             const totalWidth = (itemWidth * colCount) + (state.gap * (colCount - 1)) + (state.padding * 2);
             const totalHeight = (itemHeight * rowCount) + (state.gap * (rowCount - 1)) + (state.padding * 2);
@@ -675,17 +1043,14 @@
             canvasDimensionText.textContent = `${Math.round(totalWidth)} x ${Math.round(totalHeight)} px`;
         }
 
-        // Draw Images to Export Canvas
+        // High-Quality Canvas Rendering for Export
         function drawCanvas() {
             const ctx = exportCanvas.getContext('2d');
             const colCount = state.columns;
             const rowCount = Math.ceil(state.images.length / colCount);
 
-            const itemWidth = 500;
-            let itemHeight = 500;
-            if (state.aspectRatio !== 'auto') {
-                itemHeight = itemWidth / state.aspectRatio;
-            }
+            const itemWidth = 600;
+            const itemHeight = itemWidth / state.aspectRatio;
 
             const canvasWidth = exportCanvas.width;
             const canvasHeight = exportCanvas.height;
@@ -694,7 +1059,18 @@
             ctx.fillStyle = state.bgColor;
             ctx.fillRect(0, 0, canvasWidth, canvasHeight);
 
-            // Draw Images into Grid
+            // Filters Filter String
+            const f = state.filters;
+            let filterCss = `brightness(${f.brightness}%) contrast(${f.contrast}%) saturate(${f.saturation}%) blur(${f.blur}px)`;
+            if (f.preset === 'grayscale') filterCss += ' grayscale(100%)';
+            else if (f.preset === 'sepia') filterCss += ' sepia(100%)';
+            else if (f.preset === 'warm') filterCss += ' sepia(30%) hue-rotate(-10deg)';
+            else if (f.preset === 'cool') filterCss += ' hue-rotate(30deg)';
+            else if (f.preset === 'dramatic') filterCss += ' contrast(140%) saturate(140%)';
+
+            ctx.filter = filterCss;
+
+            // Render Images in Grid
             state.images.forEach((item, index) => {
                 const col = index % colCount;
                 const row = Math.floor(index / colCount);
@@ -704,7 +1080,7 @@
 
                 ctx.save();
 
-                // Border Radius Clipping Path
+                // Border Radius Clip
                 if (state.borderRadius > 0) {
                     const r = Math.min(state.borderRadius * 2, itemWidth / 2, itemHeight / 2);
                     ctx.beginPath();
@@ -717,98 +1093,89 @@
                     ctx.clip();
                 }
 
-                // Object-Fit Cover Calculation
+                // Draw Image with Pan/Zoom calculations
                 const img = item.imgObj;
-                const imgAspect = img.width / img.height;
                 const targetAspect = itemWidth / itemHeight;
+                const imgAspect = img.width / img.height;
 
-                let sx, sy, sWidth, sHeight;
+                let sWidth, sHeight, sx, sy;
 
                 if (imgAspect > targetAspect) {
-                    sHeight = img.height;
-                    sWidth = img.height * targetAspect;
-                    sx = (img.width - sWidth) / 2;
-                    sy = 0;
+                    sHeight = img.height / item.zoom;
+                    sWidth = sHeight * targetAspect;
                 } else {
-                    sWidth = img.width;
-                    sHeight = img.width / targetAspect;
-                    sx = 0;
-                    sy = (img.height - sHeight) / 2;
+                    sWidth = img.width / item.zoom;
+                    sHeight = sWidth / targetAspect;
                 }
+
+                // Offset calculation based on user panning percentage (posX, posY)
+                const maxSx = img.width - sWidth;
+                const maxSy = img.height - sHeight;
+
+                sx = maxSx * (item.posX / 100);
+                sy = maxSy * (item.posY / 100);
 
                 ctx.drawImage(img, sx, sy, sWidth, sHeight, x, y, itemWidth, itemHeight);
                 ctx.restore();
             });
+
+            // Draw Watermark text on Canvas
+            if (state.watermark.text && state.watermark.position !== 'none') {
+                ctx.filter = 'none';
+                ctx.fillStyle = state.watermark.color;
+                ctx.font = 'bold 36px Prompt, sans-serif';
+                ctx.textAlign = 'center';
+
+                if (state.watermark.position === 'top-center') {
+                    ctx.fillText(state.watermark.text, canvasWidth / 2, 45);
+                } else {
+                    ctx.fillText(state.watermark.text, canvasWidth / 2, canvasHeight - 25);
+                }
+            }
         }
 
-        // Process and Save Image (Cross-Platform & Mobile Friendly)
-        function processAndSaveImage() {
-            if (state.images.length === 0) {
-                showToast('กรุณาเพิ่มรูปภาพก่อนบันทึก', 'warning');
-                return;
-            }
+        // Process Export and Download
+        function processAndExportImage() {
+            if (state.images.length === 0) return showToast('กรุณาเพิ่มรูปภาพก่อนบันทึก', 'warning');
 
             try {
-                // Redraw on canvas first
                 drawCanvas();
 
-                const mimeType = state.format === 'jpeg' ? 'image/jpeg' : 'image/png';
-                const fileExt = state.format === 'jpeg' ? 'jpg' : 'png';
-                const fileName = `photo-collage-${Date.now()}.${fileExt}`;
-
-                // Convert Canvas to Blob for smooth downloading without memory caps
                 exportCanvas.toBlob((blob) => {
-                    if (!blob) {
-                        showToast('เกิดข้อผิดพลาดในการประมวลผลไฟล์', 'error');
-                        return;
-                    }
+                    if (!blob) return showToast('เกิดข้อผิดพลาดในการสร้างไฟล์', 'error');
 
-                    // Revoke old object URL if exists
-                    if (currentBlobUrl) {
-                        URL.revokeObjectURL(currentBlobUrl);
-                    }
-
+                    if (currentBlobUrl) URL.revokeObjectURL(currentBlobUrl);
                     currentBlobUrl = URL.createObjectURL(blob);
 
-                    // Detect Mobile / iOS
                     const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
 
                     if (isMobile) {
-                        // On Mobile/iOS: Show Modal so users can long-press and "Save to Photos"
                         exportResultImg.src = currentBlobUrl;
                         showModal();
-                        showToast('สร้างรูปภาพสำเร็จ! กดค้างที่รูปภาพเพื่อบันทึก');
+                        showToast('ประมวลผลสำเร็จ! กดค้างที่รูปภาพเพื่อบันทึก');
                     } else {
-                        // On Desktop: Trigger direct download link
-                        triggerDownload(currentBlobUrl, fileName);
-                        
-                        // Also set src for fallback modal if desktop browser blocks popup
+                        triggerDownload(currentBlobUrl);
                         exportResultImg.src = currentBlobUrl;
-                        showToast('ดาวน์โหลดรูปภาพสำเร็จ!');
+                        showToast('ดาวน์โหลดรูปภาพสำเร็จแล้ว!');
                     }
-
-                }, mimeType, 0.95);
+                }, 'image/png', 0.95);
 
             } catch (err) {
-                console.error("Save Image Error: ", err);
-                showToast('ไม่สามารถบันทึกได้เนื่องจากปัญหาการดาวน์โหลดภาพข้ามโดเมน', 'error');
+                console.error(err);
+                showToast('เกิดข้อผิดพลาดในการประมวลผลรูปภาพ', 'error');
             }
         }
 
-        // Trigger direct anchor tag download
-        function triggerDownload(url, fileName = `photo-collage-${Date.now()}.${state.format === 'jpeg' ? 'jpg' : 'png'}`) {
+        function triggerDownload(url, fileName = `photo-studio-collage-${Date.now()}.png`) {
             const a = document.createElement('a');
             a.style.display = 'none';
             a.href = url;
             a.download = fileName;
             document.body.appendChild(a);
             a.click();
-            setTimeout(() => {
-                document.body.removeChild(a);
-            }, 200);
+            setTimeout(() => document.body.removeChild(a), 200);
         }
 
-        // Modal Controls
         function showModal() {
             exportModal.classList.remove('opacity-0', 'pointer-events-none');
             exportModal.classList.add('opacity-100');
@@ -823,7 +1190,7 @@
             exportModal.firstElementChild.classList.add('scale-95');
         }
 
-        // On Page Load
+        // Application Onload Initialize
         window.onload = () => {
             initEvents();
             updateUI();
