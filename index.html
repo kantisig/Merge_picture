@@ -1,0 +1,709 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Photo Collage & Image Merger - รวมรูปภาพง่ายๆ</title>
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- FontAwesome Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Google Font - Prompt -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Prompt:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+
+    <style>
+        body {
+            font-family: 'Prompt', sans-serif;
+            background-color: #f8fafc;
+        }
+        /* Custom scrollbar for preview section */
+        ::-webkit-scrollbar {
+            width: 8px;
+            height: 8px;
+        }
+        ::-webkit-scrollbar-track {
+            background: #f1f5f9;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #cbd5e1;
+            border-radius: 4px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: #94a3b8;
+        }
+        .drag-over {
+            border-color: #6366f1 !important;
+            background-color: #ee authorization-50 !important;
+        }
+    </style>
+</head>
+<body class="text-slate-800 min-h-screen flex flex-col">
+
+    <!-- Header / Navbar -->
+    <header class="bg-white border-b border-slate-200 sticky top-0 z-30 shadow-sm">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
+            <div class="flex items-center space-x-3">
+                <div class="bg-indigo-600 text-white p-2.5 rounded-xl shadow-md shadow-indigo-200 flex items-center justify-center">
+                    <i class="fa-solid fa-shapes text-xl"></i>
+                </div>
+                <div>
+                    <h1 class="font-bold text-lg text-slate-800 leading-tight">Photo Grid Builder</h1>
+                    <p class="text-xs text-slate-500">รวมรูปภาพ 5 - 20 ภาพเป็นภาพเดียวง่ายๆ</p>
+                </div>
+            </div>
+            
+            <button id="downloadBtn" class="bg-indigo-600 hover:bg-indigo-700 text-white font-medium px-5 py-2.5 rounded-xl shadow-sm hover:shadow-md transition duration-200 flex items-center space-x-2 text-sm disabled:opacity-50 disabled:cursor-not-allowed">
+                <i class="fa-solid fa-download"></i>
+                <span>ดาวน์โหลดรูปภาพ</span>
+            </button>
+        </div>
+    </header>
+
+    <!-- Main Container -->
+    <main class="flex-1 max-w-7xl w-full mx-auto p-4 sm:p-6 lg:p-8 grid grid-cols-1 lg:grid-cols-12 gap-8">
+        
+        <!-- Sidebar Controls & Upload (Left Side - 4 Cols) -->
+        <div class="lg:col-span-5 xl:col-span-4 space-y-6">
+            
+            <!-- Step 1: Mode Select & Upload Area -->
+            <div class="bg-white rounded-2xl p-5 border border-slate-200 shadow-sm space-y-4">
+                <div class="flex items-center justify-between">
+                    <h2 class="font-semibold text-slate-800 flex items-center gap-2">
+                        <span class="w-6 h-6 rounded-full bg-indigo-100 text-indigo-600 text-xs flex items-center justify-center font-bold">1</span>
+                        จัดการรูปภาพ
+                    </h2>
+                    <span id="imageCounter" class="text-xs px-2.5 py-1 bg-slate-100 text-slate-600 rounded-full font-medium">0 / 20 ภาพ</span>
+                </div>
+
+                <!-- Dropzone Area -->
+                <div id="dropZone" class="border-2 border-dashed border-slate-300 hover:border-indigo-400 rounded-xl p-6 text-center transition duration-200 cursor-pointer bg-slate-50 hover:bg-indigo-50/30 flex flex-col items-center justify-center min-h-[160px]">
+                    <input type="file" id="fileInput" multiple accept="image/*" class="hidden">
+                    <div class="w-12 h-12 rounded-full bg-indigo-50 text-indigo-600 flex items-center justify-center mb-3">
+                        <i class="fa-solid fa-cloud-arrow-up text-xl"></i>
+                    </div>
+                    <p class="text-sm font-medium text-slate-700 mb-1">ลากไฟล์มาวางที่นี่ หรือ <span class="text-indigo-600 underline">คลิกเพื่อเลือกภาพ</span></p>
+                    <p class="text-xs text-slate-400">รองรับ JPG, PNG, WEBP (แนะนำ 5 - 20 ภาพ)</p>
+                </div>
+
+                <!-- Action buttons for Uploaded Images -->
+                <div class="flex gap-2">
+                    <button id="clearAllBtn" class="flex-1 py-2 px-3 border border-slate-200 hover:bg-rose-50 hover:text-rose-600 hover:border-rose-200 rounded-lg text-xs font-medium text-slate-600 transition flex items-center justify-center gap-1.5 disabled:opacity-50" disabled>
+                        <i class="fa-regular fa-trash-can"></i> ลบทั้งหมด
+                    </button>
+                    <button id="shuffleBtn" class="flex-1 py-2 px-3 border border-slate-200 hover:bg-slate-100 rounded-lg text-xs font-medium text-slate-600 transition flex items-center justify-center gap-1.5 disabled:opacity-50" disabled>
+                        <i class="fa-solid fa-shuffle"></i> สลับตำแหน่ง
+                    </button>
+                </div>
+
+                <!-- Thumbnail List / Reorder -->
+                <div id="thumbnailContainer" class="grid grid-cols-4 gap-2 pt-2 max-h-48 overflow-y-auto">
+                    <!-- Thumbnails appended via JS -->
+                </div>
+            </div>
+
+            <!-- Step 2: Customization Controls -->
+            <div class="bg-white rounded-2xl p-5 border border-slate-200 shadow-sm space-y-5">
+                <h2 class="font-semibold text-slate-800 flex items-center gap-2">
+                    <span class="w-6 h-6 rounded-full bg-indigo-100 text-indigo-600 text-xs flex items-center justify-center font-bold">2</span>
+                    ปรับแต่งเลย์เอาต์ & สไตล์
+                </h2>
+
+                <!-- Layout / Columns -->
+                <div class="space-y-2">
+                    <label class="text-xs font-medium text-slate-600 flex justify-between">
+                        <span>จํานวนคอลัมน์ (Grid Columns)</span>
+                        <span id="colValueText" class="text-indigo-600 font-semibold">3 คอลัมน์</span>
+                    </label>
+                    <div class="grid grid-cols-5 gap-1.5 bg-slate-100 p-1 rounded-xl" id="columnSelector">
+                        <button data-cols="1" class="col-btn py-1.5 text-xs font-semibold rounded-lg transition hover:bg-white text-slate-600">1</button>
+                        <button data-cols="2" class="col-btn py-1.5 text-xs font-semibold rounded-lg transition hover:bg-white text-slate-600">2</button>
+                        <button data-cols="3" class="col-btn py-1.5 text-xs font-semibold rounded-lg transition bg-white text-indigo-600 shadow-sm">3</button>
+                        <button data-cols="4" class="col-btn py-1.5 text-xs font-semibold rounded-lg transition hover:bg-white text-slate-600">4</button>
+                        <button data-cols="5" class="col-btn py-1.5 text-xs font-semibold rounded-lg transition hover:bg-white text-slate-600">5</button>
+                    </div>
+                </div>
+
+                <!-- Aspect Ratio for Crop -->
+                <div class="space-y-2">
+                    <label class="text-xs font-medium text-slate-600">สัดส่วนของแต่ละช่อง (Aspect Ratio)</label>
+                    <div class="grid grid-cols-4 gap-1.5 bg-slate-100 p-1 rounded-xl" id="aspectSelector">
+                        <button data-aspect="1" class="aspect-btn py-1.5 text-xs font-medium rounded-lg transition bg-white text-indigo-600 shadow-sm">1:1 (สี่เหลี่ยม)</button>
+                        <button data-aspect="0.75" class="aspect-btn py-1.5 text-xs font-medium rounded-lg transition hover:bg-white text-slate-600">3:4 (แนวตั้ง)</button>
+                        <button data-aspect="1.333" class="aspect-btn py-1.5 text-xs font-medium rounded-lg transition hover:bg-white text-slate-600">4:3 (แนวนอน)</button>
+                        <button data-aspect="auto" class="aspect-btn py-1.5 text-xs font-medium rounded-lg transition hover:bg-white text-slate-600">เดิมๆ</button>
+                    </div>
+                </div>
+
+                <!-- Gap / Spacing Slider -->
+                <div class="space-y-2">
+                    <div class="flex justify-between text-xs font-medium text-slate-600">
+                        <span>ระยะห่างระหว่างภาพ (Gap)</span>
+                        <span id="gapValueText" class="text-slate-500">12 px</span>
+                    </div>
+                    <input type="range" id="gapInput" min="0" max="40" value="12" class="w-full accent-indigo-600 cursor-pointer">
+                </div>
+
+                <!-- Padding Outer Slider -->
+                <div class="space-y-2">
+                    <div class="flex justify-between text-xs font-medium text-slate-600">
+                        <span>ระยะขอบภายนอก (Padding)</span>
+                        <span id="paddingValueText" class="text-slate-500">16 px</span>
+                    </div>
+                    <input type="range" id="paddingInput" min="0" max="60" value="16" class="w-full accent-indigo-600 cursor-pointer">
+                </div>
+
+                <!-- Border Radius Slider -->
+                <div class="space-y-2">
+                    <div class="flex justify-between text-xs font-medium text-slate-600">
+                        <span>ความมนของขอบภาพ (Border Radius)</span>
+                        <span id="radiusValueText" class="text-slate-500">8 px</span>
+                    </div>
+                    <input type="range" id="radiusInput" min="0" max="30" value="8" class="w-full accent-indigo-600 cursor-pointer">
+                </div>
+
+                <!-- Background Color Picker -->
+                <div class="space-y-2">
+                    <label class="text-xs font-medium text-slate-600 block">สีพื้นหลัง (Background Color)</label>
+                    <div class="flex items-center gap-2">
+                        <input type="color" id="bgColorInput" value="#ffffff" class="w-10 h-10 rounded-lg cursor-pointer border border-slate-200 p-0.5">
+                        <div class="flex gap-1.5 flex-1">
+                            <button data-color="#ffffff" class="preset-color w-7 h-7 rounded-full bg-white border border-slate-300 shadow-sm hover:scale-110 transition"></button>
+                            <button data-color="#f8fafc" class="preset-color w-7 h-7 rounded-full bg-slate-100 border border-slate-300 shadow-sm hover:scale-110 transition"></button>
+                            <button data-color="#0f172a" class="preset-color w-7 h-7 rounded-full bg-slate-900 border border-slate-300 shadow-sm hover:scale-110 transition"></button>
+                            <button data-color="#fef2f2" class="preset-color w-7 h-7 rounded-full bg-red-100 border border-red-200 shadow-sm hover:scale-110 transition"></button>
+                            <button data-color="#f0fdf4" class="preset-color w-7 h-7 rounded-full bg-green-100 border border-green-200 shadow-sm hover:scale-110 transition"></button>
+                            <button data-color="#eef2ff" class="preset-color w-7 h-7 rounded-full bg-indigo-100 border border-indigo-200 shadow-sm hover:scale-110 transition"></button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Format Option -->
+                <div class="space-y-2 pt-2 border-t border-slate-100">
+                    <label class="text-xs font-medium text-slate-600 block">ฟอร์แมตไฟล์ดาวน์โหลด</label>
+                    <div class="grid grid-cols-2 gap-2">
+                        <label class="flex items-center gap-2 p-2 rounded-xl border border-slate-200 bg-slate-50 cursor-pointer hover:bg-white text-xs">
+                            <input type="radio" name="exportFormat" value="png" checked class="accent-indigo-600">
+                            <span class="font-medium text-slate-700">PNG (ความคมชัดสูง)</span>
+                        </label>
+                        <label class="flex items-center gap-2 p-2 rounded-xl border border-slate-200 bg-slate-50 cursor-pointer hover:bg-white text-xs">
+                            <input type="radio" name="exportFormat" value="jpeg" class="accent-indigo-600">
+                            <span class="font-medium text-slate-700">JPG (ขนาดไฟล์เล็ก)</span>
+                        </label>
+                    </div>
+                </div>
+
+            </div>
+        </div>
+
+        <!-- Live Preview / Canvas Container (Right Side - 8 Cols) -->
+        <div class="lg:col-span-7 xl:col-span-8 flex flex-col h-full">
+            <div class="bg-white rounded-2xl border border-slate-200 shadow-sm p-4 sm:p-6 flex-1 flex flex-col">
+                <div class="flex items-center justify-between mb-4">
+                    <h2 class="font-semibold text-slate-800 flex items-center gap-2">
+                        <i class="fa-regular fa-image text-indigo-600"></i> ตัวอย่างภาพรวม (Live Preview)
+                    </h2>
+                    <span id="canvasDimensionText" class="text-xs text-slate-400 font-mono">0 x 0 px</span>
+                </div>
+
+                <!-- Preview Display Box -->
+                <div id="previewWrapper" class="flex-1 bg-slate-100/70 rounded-xl border border-slate-200/60 p-4 flex items-center justify-center overflow-auto min-h-[400px]">
+                    
+                    <!-- Placeholder state when no images loaded -->
+                    <div id="emptyState" class="text-center p-8 max-w-sm">
+                        <div class="w-16 h-16 bg-slate-200/60 rounded-2xl text-slate-400 flex items-center justify-center mx-auto mb-4">
+                            <i class="fa-regular fa-images text-3xl"></i>
+                        </div>
+                        <h3 class="font-semibold text-slate-700 text-base mb-1">ยังไม่มีรูปภาพ</h3>
+                        <p class="text-xs text-slate-500 leading-relaxed mb-4">อัปโหลดภาพจำนวน 5 ถึง 20 ภาพที่แถบด้านข้าง เพื่อเริ่มต้นสร้างกริดรูปภาพสวยๆ ได้ทันที</p>
+                        <button id="emptyUploadBtn" class="bg-indigo-50 hover:bg-indigo-100 text-indigo-600 border border-indigo-200 text-xs font-semibold px-4 py-2 rounded-xl transition">
+                            เลือกรูปภาพตัวอย่าง
+                        </button>
+                    </div>
+
+                    <!-- Hidden Real Canvas for Exporting -->
+                    <canvas id="exportCanvas" class="hidden"></canvas>
+
+                    <!-- HTML Rendered Dynamic Canvas Preview -->
+                    <div id="collagePreview" class="shadow-xl transition-all duration-300 hidden max-w-full overflow-hidden" style="background-color: #ffffff;">
+                        <!-- Dynamic Grid content will be rendered here via JS -->
+                    </div>
+
+                </div>
+            </div>
+        </div>
+
+    </main>
+
+    <!-- Notification / Toast Container -->
+    <div id="toast" class="fixed bottom-5 right-5 bg-slate-800 text-white text-xs font-medium px-4 py-3 rounded-xl shadow-xl transition-all duration-300 opacity-0 transform translate-y-4 pointer-events-none z-50 flex items-center gap-2">
+        <i id="toastIcon" class="fa-solid fa-circle-check text-emerald-400 text-sm"></i>
+        <span id="toastMessage">ข้อความแจ้งเตือน</span>
+    </div>
+
+    <!-- JavaScript Logic -->
+    <script>
+        // Application State
+        const state = {
+            images: [], // List of loaded Image objects with meta
+            columns: 3,
+            gap: 12,
+            padding: 16,
+            borderRadius: 8,
+            bgColor: '#ffffff',
+            aspectRatio: 1, // 1:1 square default, 'auto' or numeric
+            format: 'png',
+            maxCanvasWidth: 2000 // Pixel width for generated export canvas
+        };
+
+        <!-- DOM Elements -->
+        const dropZone = document.getElementById('dropZone');
+        const fileInput = document.getElementById('fileInput');
+        const thumbnailContainer = document.getElementById('thumbnailContainer');
+        const imageCounter = document.getElementById('imageCounter');
+        const clearAllBtn = document.getElementById('clearAllBtn');
+        const shuffleBtn = document.getElementById('shuffleBtn');
+        const downloadBtn = document.getElementById('downloadBtn');
+        const emptyState = document.getElementById('emptyState');
+        const emptyUploadBtn = document.getElementById('emptyUploadBtn');
+        const collagePreview = document.getElementById('collagePreview');
+        const exportCanvas = document.getElementById('exportCanvas');
+        const canvasDimensionText = document.getElementById('canvasDimensionText');
+
+        <!-- Controls Elements -->
+        const gapInput = document.getElementById('gapInput');
+        const gapValueText = document.getElementById('gapValueText');
+        const paddingInput = document.getElementById('paddingInput');
+        const paddingValueText = document.getElementById('paddingValueText');
+        const radiusInput = document.getElementById('radiusInput');
+        const radiusValueText = document.getElementById('radiusValueText');
+        const bgColorInput = document.getElementById('bgColorInput');
+        const colValueText = document.getElementById('colValueText');
+
+        // Toast Notification Function
+        function showToast(message, type = 'success') {
+            const toast = document.getElementById('toast');
+            const toastMessage = document.getElementById('toastMessage');
+            const toastIcon = document.getElementById('toastIcon');
+
+            toastMessage.textContent = message;
+            if(type === 'success') {
+                toastIcon.className = 'fa-solid fa-circle-check text-emerald-400 text-sm';
+            } else if(type === 'warning') {
+                toastIcon.className = 'fa-solid fa-triangle-exclamation text-amber-400 text-sm';
+            } else {
+                toastIcon.className = 'fa-solid fa-circle-xmark text-rose-400 text-sm';
+            }
+
+            toast.classList.remove('opacity-0', 'translate-y-4');
+            toast.classList.add('opacity-100', 'translate-y-0');
+
+            setTimeout(() => {
+                toast.classList.remove('opacity-100', 'translate-y-0');
+                toast.classList.add('opacity-0', 'translate-y-4');
+            }, 3000);
+        }
+
+        // Initialize Event Listeners
+        function initEvents() {
+            // Dropzone drag & drop
+            ['dragenter', 'dragover'].forEach(eventName => {
+                dropZone.addEventListener(eventName, (e) => {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    dropZone.classList.add('drag-over');
+                }, false);
+            });
+
+            ['dragleave', 'drop'].forEach(eventName => {
+                dropZone.addEventListener(eventName, (e) => {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    dropZone.classList.remove('drag-over');
+                }, false);
+            });
+
+            dropZone.addEventListener('drop', (e) => {
+                const dt = e.dataTransfer;
+                const files = dt.files;
+                handleFiles(files);
+            });
+
+            dropZone.addEventListener('click', () => fileInput.click());
+            emptyUploadBtn.addEventListener('click', () => generateSampleImages());
+            fileInput.addEventListener('change', (e) => handleFiles(e.target.files));
+
+            // Controls listeners
+            document.querySelectorAll('.col-btn').forEach(btn => {
+                btn.addEventListener('click', (e) => {
+                    document.querySelectorAll('.col-btn').forEach(b => {
+                        b.classList.remove('bg-white', 'text-indigo-600', 'shadow-sm');
+                        b.classList.add('text-slate-600');
+                    });
+                    e.currentTarget.classList.add('bg-white', 'text-indigo-600', 'shadow-sm');
+                    e.currentTarget.classList.remove('text-slate-600');
+                    state.columns = parseInt(e.currentTarget.dataset.cols);
+                    colValueText.textContent = `${state.columns} คอลัมน์`;
+                    renderCollage();
+                });
+            });
+
+            document.querySelectorAll('.aspect-btn').forEach(btn => {
+                btn.addEventListener('click', (e) => {
+                    document.querySelectorAll('.aspect-btn').forEach(b => {
+                        b.classList.remove('bg-white', 'text-indigo-600', 'shadow-sm');
+                        b.classList.add('text-slate-600');
+                    });
+                    e.currentTarget.classList.add('bg-white', 'text-indigo-600', 'shadow-sm');
+                    e.currentTarget.classList.remove('text-slate-600');
+                    const val = e.currentTarget.dataset.aspect;
+                    state.aspectRatio = val === 'auto' ? 'auto' : parseFloat(val);
+                    renderCollage();
+                });
+            });
+
+            gapInput.addEventListener('input', (e) => {
+                state.gap = parseInt(e.target.value);
+                gapValueText.textContent = `${state.gap} px`;
+                renderCollage();
+            });
+
+            paddingInput.addEventListener('input', (e) => {
+                state.padding = parseInt(e.target.value);
+                paddingValueText.textContent = `${state.padding} px`;
+                renderCollage();
+            });
+
+            radiusInput.addEventListener('input', (e) => {
+                state.borderRadius = parseInt(e.target.value);
+                radiusValueText.textContent = `${state.borderRadius} px`;
+                renderCollage();
+            });
+
+            bgColorInput.addEventListener('input', (e) => {
+                state.bgColor = e.target.value;
+                renderCollage();
+            });
+
+            document.querySelectorAll('.preset-color').forEach(btn => {
+                btn.addEventListener('click', (e) => {
+                    const color = e.currentTarget.dataset.color;
+                    state.bgColor = color;
+                    bgColorInput.value = color;
+                    renderCollage();
+                });
+            });
+
+            document.querySelectorAll('input[name="exportFormat"]').forEach(radio => {
+                radio.addEventListener('change', (e) => {
+                    state.format = e.target.value;
+                });
+            });
+
+            clearAllBtn.addEventListener('click', clearAllImages);
+            shuffleBtn.addEventListener('click', shuffleImages);
+            downloadBtn.addEventListener('click', downloadCombinedImage);
+        }
+
+        // Handle uploaded image files
+        function handleFiles(files) {
+            const validFiles = Array.from(files).filter(file => file.type.startsWith('image/'));
+            if (validFiles.length === 0) {
+                showToast('กรุณาเลือกไฟล์รูปภาพเท่านั้น', 'warning');
+                return;
+            }
+
+            let loadedCount = 0;
+            validFiles.forEach(file => {
+                const reader = new FileReader();
+                reader.onload = (e) => {
+                    const img = new Image();
+                    img.onload = () => {
+                        state.images.push({
+                            id: Date.now() + Math.random(),
+                            imgObj: img,
+                            src: e.target.result
+                        });
+                        loadedCount++;
+                        if (loadedCount === validFiles.length) {
+                            updateUI();
+                            renderCollage();
+                            showToast(`เพิ่มรูปภาพสำเร็จ ${validFiles.length} รายการ`);
+                        }
+                    };
+                    img.src = e.target.result;
+                };
+                reader.readAsDataURL(file);
+            });
+            fileInput.value = '';
+        }
+
+        // Generate Sample Images when clicking sample button
+        function generateSampleImages() {
+            const sampleColors = ['#f43f5e', '#3b82f6', '#10b981', '#f59e0b', '#8b5cf6', '#ec4899', '#06b6d4', '#84cc16'];
+            let loaded = 0;
+            const targetCount = 6;
+
+            for (let i = 0; i < targetCount; i++) {
+                const canvas = document.createElement('canvas');
+                canvas.width = 400;
+                canvas.height = 400;
+                const ctx = canvas.getContext('2d');
+
+                // Draw background gradient
+                const grad = ctx.createLinearGradient(0, 0, 400, 400);
+                grad.addColorStop(0, sampleColors[i % sampleColors.length]);
+                grad.addColorStop(1, sampleColors[(i + 2) % sampleColors.length]);
+                ctx.fillStyle = grad;
+                ctx.fillRect(0, 0, 400, 400);
+
+                // Draw simple text icon
+                ctx.fillStyle = '#ffffff';
+                ctx.font = 'bold 80px Prompt, sans-serif';
+                ctx.textAlign = 'center';
+                ctx.textBaseline = 'middle';
+                ctx.fillText(`ภาพที่ ${i + 1}`, 200, 200);
+
+                const dataUrl = canvas.toDataURL();
+                const img = new Image();
+                img.onload = () => {
+                    state.images.push({
+                        id: Date.now() + Math.random(),
+                        imgObj: img,
+                        src: dataUrl
+                    });
+                    loaded++;
+                    if (loaded === targetCount) {
+                        updateUI();
+                        renderCollage();
+                        showToast('โหลดรูปภาพตัวอย่าง 6 ภาพเรียบร้อยแล้ว');
+                    }
+                };
+                img.src = dataUrl;
+            }
+        }
+
+        // Update Thumbnails & Action buttons state
+        function updateUI() {
+            const count = state.images.length;
+            imageCounter.textContent = `${count} ภาพ`;
+            
+            if (count >= 5 && count <= 20) {
+                imageCounter.className = "text-xs px-2.5 py-1 bg-emerald-100 text-emerald-700 rounded-full font-medium";
+            } else {
+                imageCounter.className = "text-xs px-2.5 py-1 bg-slate-100 text-slate-600 rounded-full font-medium";
+            }
+
+            clearAllBtn.disabled = count === 0;
+            shuffleBtn.disabled = count < 2;
+            downloadBtn.disabled = count === 0;
+
+            if (count === 0) {
+                emptyState.classList.remove('hidden');
+                collagePreview.classList.add('hidden');
+                thumbnailContainer.innerHTML = '';
+                canvasDimensionText.textContent = '0 x 0 px';
+                return;
+            }
+
+            emptyState.classList.add('hidden');
+            collagePreview.classList.remove('hidden');
+
+            // Render Thumbnails
+            thumbnailContainer.innerHTML = '';
+            state.images.forEach((item, index) => {
+                const thumb = document.createElement('div');
+                thumb.className = 'relative group aspect-square rounded-lg overflow-hidden border border-slate-200 bg-slate-100';
+                thumb.innerHTML = `
+                    <img src="${item.src}" class="w-full h-full object-cover">
+                    <button data-index="${index}" class="delete-thumb-btn absolute top-1 right-1 bg-rose-500 hover:bg-rose-600 text-white rounded-full w-5 h-5 flex items-center justify-center opacity-0 group-hover:opacity-100 transition duration-150 text-[10px]">
+                        <i class="fa-solid fa-xmark"></i>
+                    </button>
+                    <span class="absolute bottom-1 left-1 bg-black/60 text-white text-[9px] px-1.5 py-0.5 rounded font-mono">${index + 1}</span>
+                `;
+                thumbnailContainer.appendChild(thumb);
+            });
+
+            // Delete single thumbnail event listener
+            document.querySelectorAll('.delete-thumb-btn').forEach(btn => {
+                btn.addEventListener('click', (e) => {
+                    e.stopPropagation();
+                    const idx = parseInt(e.currentTarget.dataset.index);
+                    state.images.splice(idx, 1);
+                    updateUI();
+                    renderCollage();
+                });
+            });
+        }
+
+        // Clear all uploaded images
+        function clearAllImages() {
+            state.images = [];
+            updateUI();
+            showToast('ลบรูปภาพทั้งหมดแล้ว');
+        }
+
+        // Shuffle image order
+        function shuffleImages() {
+            for (let i = state.images.length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+                [state.images[i], state.images[j]] = [state.images[j], state.images[i]];
+            }
+            updateUI();
+            renderCollage();
+            showToast('สลับตำแหน่งรูปภาพเรียบร้อย');
+        }
+
+        // Render Collage Grid into Live Preview HTML & Canvas
+        function renderCollage() {
+            if (state.images.length === 0) return;
+
+            // Update Preview CSS Grid Styles
+            collagePreview.style.backgroundColor = state.bgColor;
+            collagePreview.style.padding = `${state.padding}px`;
+            collagePreview.style.display = 'grid';
+            collagePreview.style.gridTemplateColumns = `repeat(${state.columns}, minmax(0, 1fr))`;
+            collagePreview.style.gap = `${state.gap}px`;
+            collagePreview.style.borderRadius = '16px';
+
+            collagePreview.innerHTML = '';
+
+            state.images.forEach((item) => {
+                const card = document.createElement('div');
+                card.style.borderRadius = `${state.borderRadius}px`;
+                card.className = 'overflow-hidden flex items-center justify-center bg-slate-200/50 relative';
+                
+                if (state.aspectRatio === 'auto') {
+                    card.style.height = 'auto';
+                } else {
+                    card.style.aspectRatio = `${state.aspectRatio}`;
+                }
+
+                const img = document.createElement('img');
+                img.src = item.src;
+                img.className = 'w-full h-full object-cover block';
+                card.appendChild(img);
+
+                collagePreview.appendChild(card);
+            });
+
+            // Update real export canvas sizes
+            calculateCanvasSize();
+        }
+
+        // Calculate and sync Hi-Res Canvas for Download
+        function calculateCanvasSize() {
+            const colCount = state.columns;
+            const rowCount = Math.ceil(state.images.length / colCount);
+            
+            // Base unit sizes in pixels for export
+            const itemWidth = 500;
+            let itemHeight = 500;
+
+            if (state.aspectRatio !== 'auto') {
+                itemHeight = itemWidth / state.aspectRatio;
+            }
+
+            const totalWidth = (itemWidth * colCount) + (state.gap * (colCount - 1)) + (state.padding * 2);
+            const totalHeight = (itemHeight * rowCount) + (state.gap * (rowCount - 1)) + (state.padding * 2);
+
+            exportCanvas.width = totalWidth;
+            exportCanvas.height = totalHeight;
+
+            canvasDimensionText.textContent = `${Math.round(totalWidth)} x ${Math.round(totalHeight)} px`;
+        }
+
+        // Draw Canvas and Trigger File Download
+        function downloadCombinedImage() {
+            if (state.images.length === 0) {
+                showToast('กรุณาเพิ่มรูปภาพก่อนดาวน์โหลด', 'warning');
+                return;
+            }
+
+            const ctx = exportCanvas.getContext('2d');
+            const colCount = state.columns;
+            const rowCount = Math.ceil(state.images.length / colCount);
+
+            const itemWidth = 500;
+            let itemHeight = 500;
+            if (state.aspectRatio !== 'auto') {
+                itemHeight = itemWidth / state.aspectRatio;
+            }
+
+            const canvasWidth = exportCanvas.width;
+            const canvasHeight = exportCanvas.height;
+
+            // Fill Background
+            ctx.fillStyle = state.bgColor;
+            ctx.fillRect(0, 0, canvasWidth, canvasHeight);
+
+            // Draw Images into Grid
+            state.images.forEach((item, index) => {
+                const col = index % colCount;
+                const row = Math.floor(index / colCount);
+
+                const x = state.padding + col * (itemWidth + state.gap);
+                const y = state.padding + row * (itemHeight + state.gap);
+
+                ctx.save();
+
+                // Apply Border Radius Clipping Path
+                if (state.borderRadius > 0) {
+                    const r = Math.min(state.borderRadius * 2, itemWidth / 2, itemHeight / 2);
+                    ctx.beginPath();
+                    ctx.moveTo(x + r, y);
+                    ctx.arcTo(x + itemWidth, y, x + itemWidth, y + itemHeight, r);
+                    ctx.arcTo(x + itemWidth, y + itemHeight, x, y + itemHeight, r);
+                    ctx.arcTo(x, y + itemHeight, x, y, r);
+                    ctx.arcTo(x, y, x + itemWidth, y, r);
+                    ctx.closePath();
+                    ctx.clip();
+                }
+
+                // Draw Image with Object-Fit Cover Logic
+                const img = item.imgObj;
+                const imgAspect = img.width / img.height;
+                const targetAspect = itemWidth / itemHeight;
+
+                let drawW, drawH, sx, sy, sWidth, sHeight;
+
+                if (imgAspect > targetAspect) {
+                    sHeight = img.height;
+                    sWidth = img.height * targetAspect;
+                    sx = (img.width - sWidth) / 2;
+                    sy = 0;
+                } else {
+                    sWidth = img.width;
+                    sHeight = img.width / targetAspect;
+                    sx = 0;
+                    sy = (img.height - sHeight) / 2;
+                }
+
+                ctx.drawImage(img, sx, sy, sWidth, sHeight, x, y, itemWidth, itemHeight);
+                ctx.restore();
+            });
+
+            // Create download link
+            const mimeType = state.format === 'jpeg' ? 'image/jpeg' : 'image/png';
+            const fileExt = state.format === 'jpeg' ? 'jpg' : 'png';
+            const dataUrl = exportCanvas.toDataURL(mimeType, 0.92);
+
+            const link = document.createElement('a');
+            link.download = `photo-collage-${Date.now()}.${fileExt}`;
+            link.href = dataUrl;
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+
+            showToast('ดาวน์โหลดรูปภาพรวมสำเร็จ!');
+        }
+
+        // On Page Load
+        window.onload = () => {
+            initEvents();
+            updateUI();
+        };
+    </script>
+</body>
+</html>
